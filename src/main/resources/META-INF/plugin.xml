@@ -30,7 +30,7 @@
         <toolWindow factoryClass="com.audi.portmanager.ui.PortManagerToolWindowFactory"
                     id="Port Manager"
                     anchor="bottom"
-                    icon="/icons/toolWindowIcon.svg"/>
+                    icon="/icons/icon.svg"/>
 
         <!-- Register Notification Group -->
         <notificationGroup id="PortManagerNotifications" displayType="BALLOON"/>
