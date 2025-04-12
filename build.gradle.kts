@@ -2,7 +2,7 @@ plugins {
     id("java")
     // Use the recommended alias for the IntelliJ Platform Gradle Plugin
     // alias(libs.plugins.jetbrains.intellij.platform) version "2.4.0"
-    id("org.jetbrains.intellij.platform") version "2.4.0" // Use direct ID instead of alias
+    id("org.jetbrains.intellij.platform") version "2.5.0" // Updated from 2.4.0 to 2.5.0
     id("io.freefair.lombok") version "8.4" // Keep Lombok as requested
 }
 
