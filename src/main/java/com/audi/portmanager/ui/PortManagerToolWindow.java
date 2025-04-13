@@ -107,9 +107,9 @@ public class PortManagerToolWindow {
         this.toolWindow = toolWindow;
         this.portService = new PortService(); // 實例化埠口處理服務。
         this.propertiesComponent = PropertiesComponent.getInstance(project); // 獲取專案級別的設置存儲器。
-        loadFavoritePorts();      // 從持久化設置中加載之前保存的常用埠口。
-        initializeUI();           // 構建和初始化用戶界面元素。
-        setupListeners();         // 為 UI 組件設置必要的事件監聽器。
+        loadFavoritePorts(); // 從持久化設置中加載之前保存的常用埠口。
+        initializeUI(); // 構建和初始化用戶界面元素。
+        setupListeners(); // 為 UI 組件設置必要的事件監聽器。
         updateFavoritePortsList(); // 將加載的常用埠口顯示在左側列表中。
     }
 
@@ -132,7 +132,7 @@ public class PortManagerToolWindow {
         // 創建水平分割面板，將左側和右側面板分開。
         mainSplitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, leftPanel, rightPanel);
         mainSplitPane.setDividerSize(JBUI.scale(5)); // 設定分隔條的視覺寬度。
-        mainSplitPane.setResizeWeight(0.25);         // 設定初始狀態下，左側面板佔總寬度的 25%。
+        mainSplitPane.setResizeWeight(0.25); // 設定初始狀態下，左側面板佔總寬度的 25%。
         mainSplitPane.setBorder(BorderFactory.createEmptyBorder()); // 移除分割面板自身的邊框，使界面更簡潔。
 
         // 將頂部工具列放置在根面板的北部區域。
@@ -141,7 +141,8 @@ public class PortManagerToolWindow {
         toolWindowContent.add(mainSplitPane, BorderLayout.CENTER);
 
         // 設定進程表格在沒有數據時顯示的初始提示文字（英文）。
-        processTable.getEmptyText().setText("Enter a port and click 'Find', or click a favorite. Double-click a process to terminate.");
+        processTable.getEmptyText()
+                .setText("Enter a port and click 'Find', or click a favorite. Double-click a process to terminate.");
     }
 
     /**
@@ -194,7 +195,6 @@ public class PortManagerToolWindow {
         return panel;
     }
 
-
     /**
      * 創建並返回用於顯示常用埠口列表的左側面板。
      *
@@ -211,9 +211,9 @@ public class PortManagerToolWindow {
         // 創建列表組件 (JBList) 並應用數據模型。
         favoritePortsList = new JBList<>(favoritePortsListModel);
         favoritePortsList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION); // 限制用戶只能單選。
-        favoritePortsList.setCellRenderer(new FavoritePortListCellRenderer());   // 使用自定義渲染器來美化列表項（例如添加圖標）。
-        favoritePortsList.setBackground(UIUtil.getListBackground());             // 設置列表背景色，使其與 IntelliJ 主題一致。
-        favoritePortsList.setToolTipText("Click to search this favorite port");   // 設定滑鼠懸停在列表項上時的提示（英文）。
+        favoritePortsList.setCellRenderer(new FavoritePortListCellRenderer()); // 使用自定義渲染器來美化列表項（例如添加圖標）。
+        favoritePortsList.setBackground(UIUtil.getListBackground()); // 設置列表背景色，使其與 IntelliJ 主題一致。
+        favoritePortsList.setToolTipText("Click to search this favorite port"); // 設定滑鼠懸停在列表項上時的提示（英文）。
 
         // 將列表放入一個可滾動的面板中，以便在列表項過多時可以滾動查看。
         JBScrollPane scrollPane = new JBScrollPane(favoritePortsList);
@@ -235,7 +235,7 @@ public class PortManagerToolWindow {
         // 初始化表格的數據模型 (DefaultTableModel)。
         // 定義表格的列名："PID", "Port", "Process/Command"。
         // 重寫 isCellEditable 方法，使所有單元格預設為不可編輯。
-        tableModel = new DefaultTableModel(new String[]{"PID", "Port", "Process/Command"}, 0) {
+        tableModel = new DefaultTableModel(new String[] { "PID", "Port", "Process/Command" }, 0) {
             @Override
             public boolean isCellEditable(int r, int c) {
                 return false; // 確保用戶不能直接在表格中修改數據。
@@ -245,12 +245,12 @@ public class PortManagerToolWindow {
         // 創建表格組件 (JBTable) 並應用數據模型。
         processTable = new JBTable(tableModel);
         processTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION); // 設置表格為單行選擇模式。
-        processTable.getTableHeader().setReorderingAllowed(false);          // 禁止用戶拖動列頭來改變列的順序。
-        processTable.setShowGrid(true);                                     // 顯示單元格之間的網格線。
-        processTable.setGridColor(JBColor.border());                        // 設定網格線的顏色，使其與 IntelliJ 主題的邊框顏色一致。
-        processTable.setIntercellSpacing(new Dimension(0, 0));              // 移除單元格之間的額外間距。
-        processTable.setFillsViewportHeight(true);                          // 當表格數據不足以填滿視圖高度時，自動擴展背景。
-        processTable.setRowHeight(JBUI.scale(24));                          // 設置表格中每一行的高度。
+        processTable.getTableHeader().setReorderingAllowed(false); // 禁止用戶拖動列頭來改變列的順序。
+        processTable.setShowGrid(true); // 顯示單元格之間的網格線。
+        processTable.setGridColor(JBColor.border()); // 設定網格線的顏色，使其與 IntelliJ 主題的邊框顏色一致。
+        processTable.setIntercellSpacing(new Dimension(0, 0)); // 移除單元格之間的額外間距。
+        processTable.setFillsViewportHeight(true); // 當表格數據不足以填滿視圖高度時，自動擴展背景。
+        processTable.setRowHeight(JBUI.scale(24)); // 設置表格中每一行的高度。
         processTable.setDefaultRenderer(Object.class, new ProcessTableCellRenderer()); // 為所有數據類型設置自定義的單元格渲染器。
 
         // 為表格設置滑鼠懸停提示，告知用戶雙擊可以終止進程（英文）。
@@ -260,8 +260,8 @@ public class PortManagerToolWindow {
         // 獲取表格的列模型，以設置各列的寬度屬性。
         TableColumnModel columnModel = processTable.getColumnModel();
         int mediumWidth = JBUI.scale(75); // 定義一個適中的寬度
-        int minWidth = JBUI.scale(60);   // 最小寬度
-        int maxWidth = JBUI.scale(100);  // 最大寬度 (給一點彈性)
+        int minWidth = JBUI.scale(60); // 最小寬度
+        int maxWidth = JBUI.scale(100); // 最大寬度 (給一點彈性)
 
         // 設定 PID 列 (索引 0) 的寬度
         columnModel.getColumn(0).setPreferredWidth(mediumWidth);
@@ -275,7 +275,7 @@ public class PortManagerToolWindow {
 
         // 設定 Process/Command 列 (索引 2) 的寬度 - 繼續佔據剩餘空間
         columnModel.getColumn(2).setPreferredWidth(JBUI.scale(350)); // 保持或根據需要調整
-        columnModel.getColumn(2).setMinWidth(JBUI.scale(150));     // 保持最小寬度
+        columnModel.getColumn(2).setMinWidth(JBUI.scale(150)); // 保持最小寬度
 
         // 將表格放入可滾動面板中。
         JBScrollPane scrollPane = new JBScrollPane(processTable);
@@ -299,13 +299,12 @@ public class PortManagerToolWindow {
         // 創建一個預設的 Action 組，用於容納工具列上的按鈕。
         DefaultActionGroup actionGroup = new DefaultActionGroup();
 
-        // *** 修改: 將圖標從 AllIcons.Actions.Cancel 改為 AllIcons.Actions.Delete ***
         // 定義 "Kill Process" 這個 Action。
-        killProcessAction = new AnAction("Kill Process", "Terminate selected process", AllIcons.General.Delete) { // <--- 圖標已更改
+        killProcessAction = new AnAction("Kill Process", "Terminate selected process", AllIcons.Actions.GC) {
             // 當用戶點擊此 Action 對應的按鈕時執行的邏輯。
             @Override
             public void actionPerformed(@NotNull AnActionEvent e) {
-                killSelectedProcessAction(); // 調用實際處理進程終止的方法。
+                killSelectedProcess(); // 調用實際處理進程終止的方法。
             }
 
             // IntelliJ 定期調用此方法來更新 Action 的狀態（例如是否啟用）。
@@ -328,8 +327,8 @@ public class PortManagerToolWindow {
         // 使用 IntelliJ 的 ActionManager 根據 Action 組創建一個 ActionToolbar。
         ActionToolbar toolbar = ActionManager.getInstance().createActionToolbar(
                 ActionPlaces.TOOLWINDOW_TOOLBAR_BAR, // 指定此工具列在 UI 中的上下文位置。
-                actionGroup,                         // 提供包含 Actions 的組。
-                true                                 // true 表示工具列按鈕水平排列。
+                actionGroup, // 提供包含 Actions 的組。
+                true // true 表示工具列按鈕水平排列。
         );
         // 將工具列的目標組件設置為進程表格。
         // 這使得 Action 的狀態（通過 update 方法）能自動響應表格的選擇變化。
@@ -439,7 +438,7 @@ public class PortManagerToolWindow {
                         // 檢查該行的 PID 是否是有效的、可終止的進程標識。
                         if (pidObj instanceof String && !"-".equals(pidObj)) {
                             LOG.info("Double-click detected on killable process row, triggering kill action."); // 記錄雙擊事件（英文）。
-                            killSelectedProcessAction(); // 觸發終止進程的操作。
+                            killSelectedProcess(); // 觸發終止進程的操作。
                         } else {
                             // 如果雙擊在無效行或 PID 為 "-" 的行，記錄調試信息（英文）。
                             LOG.debug("Double-click on non-killable row (PID: " + pidObj + "), ignoring.");
@@ -452,7 +451,6 @@ public class PortManagerToolWindow {
             }
         });
     }
-
 
     // --- 主要業務邏輯方法 ---
 
@@ -468,7 +466,8 @@ public class PortManagerToolWindow {
             // 如果為空，顯示警告對話框（英文）。
             Messages.showWarningDialog(toolWindow.getComponent(), "Please enter a port number.", "Input Required");
             // 更新表格的空狀態提示文字（英文）。
-            processTable.getEmptyText().setText("Please enter a port number and click 'Find'. Double-click a process to terminate.");
+            processTable.getEmptyText()
+                    .setText("Please enter a port number and click 'Find'. Double-click a process to terminate.");
             tableModel.setRowCount(0); // 清空表格現有數據。
             return; // 中止操作。
         }
@@ -480,9 +479,11 @@ public class PortManagerToolWindow {
             // 驗證埠號是否在有效範圍 (1-65535) 內。
             if (port <= 0 || port > 65535) {
                 // 如果無效，顯示錯誤對話框（英文）。
-                Messages.showErrorDialog(toolWindow.getComponent(), "Port number must be between 1 and 65535.", "Invalid Port");
+                Messages.showErrorDialog(toolWindow.getComponent(), "Port number must be between 1 and 65535.",
+                        "Invalid Port");
                 // 更新表格空狀態提示（英文）。
-                processTable.getEmptyText().setText("Invalid port number (1-65535). Double-click a process to terminate.");
+                processTable.getEmptyText()
+                        .setText("Invalid port number (1-65535). Double-click a process to terminate.");
                 tableModel.setRowCount(0);
                 return;
             }
@@ -508,67 +509,76 @@ public class PortManagerToolWindow {
 
         // 使用 IntelliJ 的 ProgressManager 在後台線程執行耗時的埠口查詢操作。
         // Task.Backgroundable 會在狀態欄顯示進度。
-        ProgressManager.getInstance().run(new Task.Backgroundable(project, "Searching Processes on Port " + port, true) {
-            @Override
-            public void run(@NotNull ProgressIndicator indicator) {
-                // 將進度指示器設置為不確定模式（旋轉動畫）。
-                indicator.setIndeterminate(true);
-                try {
-                    // 調用 PortService 中的方法實際執行查詢。
-                    List<PortProcessInfo> processes = portService.findProcessesOnPort(Integer.parseInt(finalPortText));
+        ProgressManager.getInstance()
+                .run(new Task.Backgroundable(project, "Searching Processes on Port " + port, true) {
+                    @Override
+                    public void run(@NotNull ProgressIndicator indicator) {
+                        // 將進度指示器設置為不確定模式（旋轉動畫）。
+                        indicator.setIndeterminate(true);
+                        try {
+                            // 調用 PortService 中的方法實際執行查詢。
+                            List<PortProcessInfo> processes = portService
+                                    .findProcessesOnPort(Integer.parseInt(finalPortText));
 
-                    // 查詢完成後，回到 UI 線程更新表格內容。
-                    ApplicationManager.getApplication().invokeLater(() -> {
-                        tableModel.setRowCount(0); // 再次清空，以防萬一。
-                        if (processes.isEmpty()) {
-                            // 如果未找到任何進程。
-                            // 更新表格空狀態提示（英文）。
-                            processTable.getEmptyText().setText("No processes found listening on port " + finalPortText + ". Double-click a process to terminate.");
-                        } else {
-                            // 如果找到了進程。
-                            // 更新表格空狀態提示，移除搜索提示，顯示通用操作提示（英文）。
-                            processTable.getEmptyText().setText("Double-click a process in the table to try terminating it.");
-                            // 將查詢到的每個進程信息添加到表格模型中。
-                            processes.forEach(info -> tableModel.addRow(new Object[]{info.getPid(), info.getPort(), info.getCommand()}));
-                            // 如果表格中有數據，自動選中第一行。
-                            if (tableModel.getRowCount() > 0) {
-                                processTable.setRowSelectionInterval(0, 0);
-                            }
+                            // 查詢完成後，回到 UI 線程更新表格內容。
+                            ApplicationManager.getApplication().invokeLater(() -> {
+                                tableModel.setRowCount(0); // 再次清空，以防萬一。
+                                if (processes.isEmpty()) {
+                                    // 如果未找到任何進程。
+                                    // 更新表格空狀態提示（英文）。
+                                    processTable.getEmptyText().setText("No processes found listening on port "
+                                            + finalPortText + ". Double-click a process to terminate.");
+                                } else {
+                                    // 如果找到了進程。
+                                    // 更新表格空狀態提示，移除搜索提示，顯示通用操作提示（英文）。
+                                    processTable.getEmptyText()
+                                            .setText("Double-click a process in the table to try terminating it.");
+                                    // 將查詢到的每個進程信息添加到表格模型中。
+                                    processes.forEach(info -> tableModel
+                                            .addRow(new Object[] { info.getPid(), info.getPort(), info.getCommand() }));
+                                    // 如果表格中有數據，自動選中第一行。
+                                    if (tableModel.getRowCount() > 0) {
+                                        processTable.setRowSelectionInterval(0, 0);
+                                    }
+                                }
+                            });
+                        } catch (Exception ex) {
+                            // 如果在查詢過程中發生異常。
+                            LOG.error("Error searching for processes on port " + finalPortText, ex); // 記錄錯誤日誌（英文）。
+                            // 獲取錯誤消息，如果為 null 則使用通用錯誤提示（英文）。
+                            final String errorMessage = ex.getMessage() != null ? ex.getMessage() : "Unknown error";
+                            // 回到 UI 線程顯示錯誤。
+                            ApplicationManager.getApplication().invokeLater(() -> {
+                                // 顯示錯誤對話框（英文）。
+                                Messages.showErrorDialog(toolWindow.getComponent(),
+                                        "Error finding processes: " + errorMessage, "Search Error");
+                                // 在表格空狀態區域顯示錯誤信息（英文）。
+                                processTable.getEmptyText().setText("Error during search: " + errorMessage
+                                        + ". Double-click a process to terminate.");
+                            });
                         }
-                    });
-                } catch (Exception ex) {
-                    // 如果在查詢過程中發生異常。
-                    LOG.error("Error searching for processes on port " + finalPortText, ex); // 記錄錯誤日誌（英文）。
-                    // 獲取錯誤消息，如果為 null 則使用通用錯誤提示（英文）。
-                    final String errorMessage = ex.getMessage() != null ? ex.getMessage() : "Unknown error";
-                    // 回到 UI 線程顯示錯誤。
-                    ApplicationManager.getApplication().invokeLater(() -> {
-                        // 顯示錯誤對話框（英文）。
-                        Messages.showErrorDialog(toolWindow.getComponent(), "Error finding processes: " + errorMessage, "Search Error");
-                        // 在表格空狀態區域顯示錯誤信息（英文）。
-                        processTable.getEmptyText().setText("Error during search: " + errorMessage + ". Double-click a process to terminate.");
-                    });
-                }
-            }
-        });
+                    }
+                });
     }
 
     /**
      * 執行終止選定進程的操作。
      * 可由 "Kill Process" 按鈕或雙擊表格行觸發。
      */
-    private void killSelectedProcessAction() {
+    private void killSelectedProcess() {
         LOG.info("Kill Process action initiated."); // 記錄操作開始（英文）。
         int selectedRow = processTable.getSelectedRow(); // 獲取當前選中的行。
-        if (selectedRow == -1) return; // 如果沒有選中行，則直接返回。
+        if (selectedRow == -1)
+            return; // 如果沒有選中行，則直接返回。
 
         Object pidObj = tableModel.getValueAt(selectedRow, 0); // 獲取選中行的 PID。
         // 再次驗證 PID 是否有效。
-        if (!(pidObj instanceof String) || "-".equals(pidObj)) return;
+        if (!(pidObj instanceof String) || "-".equals(pidObj))
+            return;
 
         final String pid = (String) pidObj; // 確定要終止的 PID。
         String command = tableModel.getValueAt(selectedRow, 1).toString(); // 獲取進程命令。
-        String port = tableModel.getValueAt(selectedRow, 2).toString();   // 獲取相關埠號。
+        String port = tableModel.getValueAt(selectedRow, 2).toString(); // 獲取相關埠號。
 
         // 彈出確認對話框，詢問用戶是否確定要終止進程（英文）。
         int confirmation = Messages.showYesNoDialog(
@@ -588,7 +598,7 @@ public class PortManagerToolWindow {
         // Task.Modal 會阻塞部分 UI，並顯示一個帶進度條的對話框。
         ProgressManager.getInstance().run(new Task.Modal(project, "Killing Process " + pid, false) {
             boolean success = false; // 標記終止操作是否成功。
-            String errMsg = null;    // 用於儲存執行過程中可能出現的錯誤信息。
+            String errMsg = null; // 用於儲存執行過程中可能出現的錯誤信息。
 
             // 在後台線程中執行實際的進程終止邏輯。
             @Override
@@ -627,14 +637,18 @@ public class PortManagerToolWindow {
                         }
                         // 如果移除後表格變空，更新空狀態提示（英文）。
                         if (tableModel.getRowCount() == 0) {
-                            processTable.getEmptyText().setText("No running processes found. Double-click a process to terminate.");
+                            processTable.getEmptyText()
+                                    .setText("No running processes found. Double-click a process to terminate.");
                         }
                     });
                 } else {
                     // 如果 PortService 返回 false 或發生異常。
                     LOG.warn("Failed to kill PID: " + pid + (errMsg != null ? " Error: " + errMsg : "")); // 記錄失敗日誌（英文）。
                     // 顯示失敗的錯誤對話框（英文）。
-                    Messages.showErrorDialog(toolWindow.getComponent(), "Failed to kill PID: " + pid + (errMsg != null ? "\nError: " + errMsg : ". Check permissions or if the process still exists."), "Kill Failed");
+                    Messages.showErrorDialog(toolWindow.getComponent(),
+                            "Failed to kill PID: " + pid + (errMsg != null ? "\nError: " + errMsg
+                                    : ". Check permissions or if the process still exists."),
+                            "Kill Failed");
                 }
             }
 
@@ -644,7 +658,8 @@ public class PortManagerToolWindow {
                 super.onThrowable(t);
                 LOG.error("Unexpected error occurred while killing process", t); // 記錄意外錯誤（英文）。
                 // 顯示通用的錯誤對話框（英文）。
-                Messages.showErrorDialog(toolWindow.getComponent(), "Error killing process: " + t.getMessage(), "Error");
+                Messages.showErrorDialog(toolWindow.getComponent(), "Error killing process: " + t.getMessage(),
+                        "Error");
             }
         });
     }
@@ -665,7 +680,8 @@ public class PortManagerToolWindow {
         JLabel titleLabel = new JBLabel("Favorite Ports Settings", UIUtil.ComponentStyle.LARGE);
         titleLabel.setFont(titleLabel.getFont().deriveFont(Font.BOLD)); // 設置為粗體。
         // 說明文字（英文）。
-        JLabel descLabel = new JBLabel("Drag and drop to reorder. Use buttons to add/remove.", UIUtil.ComponentStyle.SMALL);
+        JLabel descLabel = new JBLabel("Drag and drop to reorder. Use buttons to add/remove.",
+                UIUtil.ComponentStyle.SMALL);
         descLabel.setForeground(UIUtil.getContextHelpForeground()); // 使用標準的輔助文字顏色。
         headerPanel.add(titleLabel);
         headerPanel.add(descLabel);
@@ -676,8 +692,8 @@ public class PortManagerToolWindow {
         JList<String> portList = new JList<>(portListModel); // 創建 JList 組件。
         portList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION); // 設置為單選模式。
         portList.setCellRenderer(new PortListCellRenderer()); // 使用自定義渲染器顯示列表項。
-        portList.setDragEnabled(true);                        // 啟用列表項的拖放功能。
-        portList.setDropMode(DropMode.INSERT);                // 設置拖放行為為插入模式。
+        portList.setDragEnabled(true); // 啟用列表項的拖放功能。
+        portList.setDropMode(DropMode.INSERT); // 設置拖放行為為插入模式。
         portList.setTransferHandler(new PortListTransferHandler(portListModel)); // 設置處理拖放數據傳輸的 Handler。
         JBScrollPane scrollPane = new JBScrollPane(portList); // 將列表放入滾動面板。
         scrollPane.setBorder(IdeBorderFactory.createBorder(SideBorder.ALL)); // 為滾動面板設置邊框。
@@ -764,14 +780,14 @@ public class PortManagerToolWindow {
 
         // --- 顯示標準的 IntelliJ 選項對話框 ---
         int result = JOptionPane.showOptionDialog(
-                toolWindow.getComponent(),   // 指定父組件。
-                panel,                       // 對話框顯示的內容面板。
-                "Favorite Ports Settings",   // 對話框標題（英文）。
+                toolWindow.getComponent(), // 指定父組件。
+                panel, // 對話框顯示的內容面板。
+                "Favorite Ports Settings", // 對話框標題（英文）。
                 JOptionPane.OK_CANCEL_OPTION, // 提供 "OK" 和 "Cancel" 選項。
-                JOptionPane.PLAIN_MESSAGE,    // 不顯示額外的圖標。
-                null,                         // 不使用自定義圖標。
-                new String[]{"Save", "Cancel"}, // 按鈕上的文字（英文）。
-                "Save"                         // 預設選中的按鈕（英文）。
+                JOptionPane.PLAIN_MESSAGE, // 不顯示額外的圖標。
+                null, // 不使用自定義圖標。
+                new String[] { "Save", "Cancel" }, // 按鈕上的文字（英文）。
+                "Save" // 預設選中的按鈕（英文）。
         );
 
         // 根據用戶的選擇處理結果。
@@ -782,7 +798,7 @@ public class PortManagerToolWindow {
             for (int i = 0; i < portListModel.getSize(); i++) {
                 favoritePorts.add(portListModel.get(i));
             }
-            saveFavoritePorts();       // 將更新後的列表持久化保存。
+            saveFavoritePorts(); // 將更新後的列表持久化保存。
             updateFavoritePortsList(); // 更新主界面左側的常用埠口列表顯示。
         } else { // 如果用戶點擊了 "Cancel" 或關閉了對話框。
             LOG.debug("User cancelled favorite ports settings."); // 記錄取消操作（英文）。
@@ -798,10 +814,10 @@ public class PortManagerToolWindow {
      * @param tooltip 按鈕的滑鼠懸停提示文字。
      */
     private void styleActionButton(JButton button, Dimension size, Insets margin, String tooltip) {
-        button.setPreferredSize(size);     // 設置按鈕大小。
-        button.setMargin(margin);          // 設置按鈕內邊距。
-        button.setFocusPainted(false);     // 移除焦點邊框。
-        button.setToolTipText(tooltip);    // 設置提示文字。
+        button.setPreferredSize(size); // 設置按鈕大小。
+        button.setMargin(margin); // 設置按鈕內邊距。
+        button.setFocusPainted(false); // 移除焦點邊框。
+        button.setToolTipText(tooltip); // 設置提示文字。
     }
 
     // --- 加載/保存/通知/獲取內容 的輔助方法 ---
@@ -865,7 +881,8 @@ public class PortManagerToolWindow {
      */
     private static class FavoritePortListCellRenderer extends DefaultListCellRenderer {
         @Override
-        public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+        public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected,
+                boolean cellHasFocus) {
             // 調用父類的實現以獲取基本的 JLabel 組件和默認樣式。
             JLabel l = (JLabel) super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
             // 設置列表項的內邊距。
@@ -884,7 +901,8 @@ public class PortManagerToolWindow {
      */
     private static class PortListCellRenderer extends DefaultListCellRenderer {
         @Override
-        public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+        public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected,
+                boolean cellHasFocus) {
             // 調用父類實現獲取基礎 JLabel。
             JLabel l = (JLabel) super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
             // 設置一個複合邊框：
@@ -892,8 +910,7 @@ public class PortManagerToolWindow {
             // 內部邊框是提供上下左右內邊距的空邊框。
             l.setBorder(BorderFactory.createCompoundBorder(
                     BorderFactory.createMatteBorder(0, 0, 1, 0, JBColor.border()),
-                    JBUI.Borders.empty(5, 10)
-            ));
+                    JBUI.Borders.empty(5, 10)));
             return l;
         }
     }
@@ -908,11 +925,11 @@ public class PortManagerToolWindow {
         // 定義 PID 列使用的特殊邊框（在右側添加一條線，並提供內邊距）。
         private final Border pidBorder = JBUI.Borders.compound(
                 JBUI.Borders.customLine(JBColor.border(), 0, 0, 0, 1),
-                JBUI.Borders.empty(4, 6)
-        );
+                JBUI.Borders.empty(4, 6));
 
         @Override
-        public Component getTableCellRendererComponent(JTable t, Object v, boolean isSel, boolean hasFoc, int r, int c) {
+        public Component getTableCellRendererComponent(JTable t, Object v, boolean isSel, boolean hasFoc, int r,
+                int c) {
             // 調用父類實現獲取用於渲染的基礎組件（通常是 JLabel）。
             Component comp = super.getTableCellRendererComponent(t, v, isSel, hasFoc, r, c);
             if (comp instanceof JLabel) { // 確保組件是 JLabel。
@@ -923,7 +940,7 @@ public class PortManagerToolWindow {
                 // 根據是否選中來設置背景色和前景色。
                 if (!isSel) { // 如果未選中。
                     // 應用斑馬紋背景色（奇偶行不同）。
-                    l.setBackground(UIUtil.getTableBackground(r % 2 != 0));
+                    l.setBackground(r % 2 != 0 ? JBColor.background().brighter() : JBColor.background());
                     // 使用標準表格前景色。
                     l.setForeground(UIUtil.getTableForeground());
                 } else { // 如果已選中。
@@ -935,7 +952,7 @@ public class PortManagerToolWindow {
                 // 對第一列（PID 列）進行特殊樣式處理。
                 if (c == 0) {
                     l.setHorizontalAlignment(LEFT); // 左對齊。
-                    l.setBorder(pidBorder);        // 應用 PID 特殊邊框。
+                    l.setBorder(pidBorder); // 應用 PID 特殊邊框。
                     l.setFont(t.getFont().deriveFont(Font.BOLD)); // 設置為粗體。
                     // 如果未選中，為 PID 列設置一個稍微不同的背景色以突出顯示。
                     if (!isSel) {
@@ -944,7 +961,7 @@ public class PortManagerToolWindow {
                     }
                 } else { // 對於其他列。
                     l.setHorizontalAlignment(LEFT); // 左對齊。
-                    l.setFont(t.getFont());        // 使用表格的預設字體。
+                    l.setFont(t.getFont()); // 使用表格的預設字體。
                 }
             }
             return comp;
@@ -993,18 +1010,21 @@ public class PortManagerToolWindow {
                         // 返回支持的 DataFlavor 數組（只包含我們定義的 indexFlavor）。
                         @Override
                         public DataFlavor[] getTransferDataFlavors() {
-                            return new DataFlavor[]{indexFlavor};
+                            return new DataFlavor[] { indexFlavor };
                         }
+
                         // 判斷給定的 DataFlavor 是否受支持。
                         @Override
                         public boolean isDataFlavorSupported(DataFlavor f) {
                             return f.equals(indexFlavor);
                         }
+
                         // 實際獲取傳輸數據的方法。
                         @NotNull
                         @Override
                         public Object getTransferData(DataFlavor f) throws UnsupportedFlavorException {
-                            if (!isDataFlavorSupported(f)) throw new UnsupportedFlavorException(f);
+                            if (!isDataFlavorSupported(f))
+                                throw new UnsupportedFlavorException(f);
                             return sourceIndex; // 返回記錄的源索引。
                         }
                     };
@@ -1019,7 +1039,8 @@ public class PortManagerToolWindow {
         @Override
         public boolean canImport(TransferSupport s) {
             // 必須是放置操作 (isDrop)，並且數據類型是我們支持的 indexFlavor。
-            if (!s.isDrop() || !s.isDataFlavorSupported(indexFlavor)) return false;
+            if (!s.isDrop() || !s.isDataFlavorSupported(indexFlavor))
+                return false;
             // 獲取放置位置信息。
             JList.DropLocation dl = (JList.DropLocation) s.getDropLocation();
             // 放置的目標索引不能與拖動的源索引相同（即必須有實際移動）。
@@ -1031,7 +1052,8 @@ public class PortManagerToolWindow {
          */
         @Override
         public boolean importData(TransferSupport s) {
-            if (!canImport(s)) return false; // 再次驗證是否可以導入。
+            if (!canImport(s))
+                return false; // 再次驗證是否可以導入。
 
             int draggedIdx; // 用於儲存從 Transferable 中獲取的被拖動項的原始索引。
             try {

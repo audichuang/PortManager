@@ -54,9 +54,9 @@ intellijPlatform {
         version.set(project.version.toString()) // Use the project version
 
         vendor {
-            name.set("Audi") // Replace with your name or company
-            email.set("audi51408@gmail.com") // Replace with your email
-            url.set("https://github.com/AudiCoding") // Replace with your website (optional)
+            name.set("AudiChuang") // Replace with your name or company
+            email.set("audiapplication880208@gmail.com") // Replace with your email
+            url.set("https://github.com/audichuang") // Replace with your website (optional)
         }
 
         // Plugin description displayed in the Marketplace and Plugin settings
@@ -82,15 +82,12 @@ intellijPlatform {
         """.trimIndent())
     }
 
-    // Signing configuration (optional, needed for Marketplace distribution)
-    // signing {
-    //     certificateChainFile.set(file("path/to/certificate.crt"))
-    //     privateKeyFile.set(file("path/to/privateKey.pem"))
-    //     password.set(System.getenv("SIGNING_PASSWORD")) // Use environment variable for password
-    // }
-
-    // Publishing configuration (optional, needed for Marketplace distribution)
-    // publishing {
-    //     token.set(System.getenv("JETBRAINS_MARKETPLACE_TOKEN")) // Use environment variable for token
-    // }
+    // 插件驗證配置
+    pluginVerification {
+        // 指定要驗證的IDE版本
+        ides {
+            // 使用最新的2024.1版本進行驗證
+            ide("IC", "2024.1")
+        }
+    }
 }
