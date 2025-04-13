@@ -50,7 +50,7 @@ import java.util.List;
  * 1. 顯示及管理常用埠口列表 (Favorites)。
  * 2. 允許用戶輸入埠號以查詢佔用該埠口的進程。
  * 3. 在表格中清晰展示查詢結果，包括 PID、進程命令/名稱及埠號。
- * 4. 提供便捷的進程終止功能，可透過工具列按鈕或直接雙擊表格行來操作。
+ * 4. 提供便捷的進程終止功能，可透過工具列按鈕（垃圾桶圖標）或直接雙擊表格行來操作。
  * 5. 提供常用埠口的管理介面，支援新增、刪除及拖放排序。
  */
 public class PortManagerToolWindow {
@@ -90,7 +90,7 @@ public class PortManagerToolWindow {
     private JBList<String> favoritePortsList;
     // favoritePortsList 的數據模型，管理常用埠口列表數據。
     private DefaultListModel<String> favoritePortsListModel;
-    // IntelliJ Action，代表表格工具列上的 "Kill Process" 操作。
+    // IntelliJ Action，代表表格工具列上的 "Kill Process" 操作 (使用垃圾桶圖標)。
     private AnAction killProcessAction;
 
     // 記憶體中儲存的常用埠口號列表。
@@ -233,9 +233,9 @@ public class PortManagerToolWindow {
         JPanel panel = new JBPanel<>(new BorderLayout(0, JBUI.scale(3)));
 
         // 初始化表格的數據模型 (DefaultTableModel)。
-        // 定義表格的列名："PID", "Process/Command", "Port"。
+        // 定義表格的列名："PID", "Port", "Process/Command"。
         // 重寫 isCellEditable 方法，使所有單元格預設為不可編輯。
-        tableModel = new DefaultTableModel(new String[]{"PID", "Process/Command", "Port"}, 0) {
+        tableModel = new DefaultTableModel(new String[]{"PID", "Port", "Process/Command"}, 0) {
             @Override
             public boolean isCellEditable(int r, int c) {
                 return false; // 確保用戶不能直接在表格中修改數據。
@@ -256,17 +256,26 @@ public class PortManagerToolWindow {
         // 為表格設置滑鼠懸停提示，告知用戶雙擊可以終止進程（英文）。
         processTable.setToolTipText("Double-click a process in the table to try terminating it.");
 
+        // *** 修改: 調整 PID 和 Port 欄位寬度，使其大小相似且適中 ***
         // 獲取表格的列模型，以設置各列的寬度屬性。
         TableColumnModel columnModel = processTable.getColumnModel();
-        // 設定 PID 列的寬度。
-        columnModel.getColumn(0).setPreferredWidth(JBUI.scale(80));
-        columnModel.getColumn(0).setMinWidth(JBUI.scale(60));
-        // 設定 Process/Command 列的寬度。
-        columnModel.getColumn(1).setPreferredWidth(JBUI.scale(300));
-        columnModel.getColumn(1).setMinWidth(JBUI.scale(150));
-        // 設定 Port 列的寬度。
-        columnModel.getColumn(2).setPreferredWidth(JBUI.scale(60));
-        columnModel.getColumn(2).setMaxWidth(JBUI.scale(80));
+        int mediumWidth = JBUI.scale(75); // 定義一個適中的寬度
+        int minWidth = JBUI.scale(60);   // 最小寬度
+        int maxWidth = JBUI.scale(100);  // 最大寬度 (給一點彈性)
+
+        // 設定 PID 列 (索引 0) 的寬度
+        columnModel.getColumn(0).setPreferredWidth(mediumWidth);
+        columnModel.getColumn(0).setMinWidth(minWidth);
+        columnModel.getColumn(0).setMaxWidth(maxWidth); // 添加最大寬度限制
+
+        // 設定 Port 列 (索引 1) 的寬度
+        columnModel.getColumn(1).setPreferredWidth(mediumWidth);
+        columnModel.getColumn(1).setMinWidth(minWidth);
+        columnModel.getColumn(1).setMaxWidth(maxWidth); // 添加最大寬度限制
+
+        // 設定 Process/Command 列 (索引 2) 的寬度 - 繼續佔據剩餘空間
+        columnModel.getColumn(2).setPreferredWidth(JBUI.scale(350)); // 保持或根據需要調整
+        columnModel.getColumn(2).setMinWidth(JBUI.scale(150));     // 保持最小寬度
 
         // 將表格放入可滾動面板中。
         JBScrollPane scrollPane = new JBScrollPane(processTable);
@@ -290,8 +299,9 @@ public class PortManagerToolWindow {
         // 創建一個預設的 Action 組，用於容納工具列上的按鈕。
         DefaultActionGroup actionGroup = new DefaultActionGroup();
 
+        // *** 修改: 將圖標從 AllIcons.Actions.Cancel 改為 AllIcons.Actions.Delete ***
         // 定義 "Kill Process" 這個 Action。
-        killProcessAction = new AnAction("Kill Process", "Terminate selected process", AllIcons.Actions.Cancel) {
+        killProcessAction = new AnAction("Kill Process", "Terminate selected process", AllIcons.General.Delete) { // <--- 圖標已更改
             // 當用戶點擊此 Action 對應的按鈕時執行的邏輯。
             @Override
             public void actionPerformed(@NotNull AnActionEvent e) {
@@ -519,7 +529,7 @@ public class PortManagerToolWindow {
                             // 更新表格空狀態提示，移除搜索提示，顯示通用操作提示（英文）。
                             processTable.getEmptyText().setText("Double-click a process in the table to try terminating it.");
                             // 將查詢到的每個進程信息添加到表格模型中。
-                            processes.forEach(info -> tableModel.addRow(new Object[]{info.getPid(), info.getCommand(), info.getPort()}));
+                            processes.forEach(info -> tableModel.addRow(new Object[]{info.getPid(), info.getPort(), info.getCommand()}));
                             // 如果表格中有數據，自動選中第一行。
                             if (tableModel.getRowCount() > 0) {
                                 processTable.setRowSelectionInterval(0, 0);
