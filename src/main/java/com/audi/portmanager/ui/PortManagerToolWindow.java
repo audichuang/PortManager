@@ -640,6 +640,9 @@ public class PortManagerToolWindow {
                             processTable.getEmptyText()
                                     .setText("No running processes found. Double-click a process to terminate.");
                         }
+
+                        // *** 新增：成功終止後，重新觸發查詢以刷新列表 ***
+                        findProcessesAction();
                     });
                 } else {
                     // 如果 PortService 返回 false 或發生異常。

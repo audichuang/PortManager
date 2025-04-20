@@ -29,7 +29,8 @@ dependencies {
         // Examples:
         // Windows: local("C:/Program Files/JetBrains/IntelliJ IDEA Community Edition 2024.1/")
         // Linux: local("/opt/idea-IC-241.14494.240/")
-        local("/Applications/IntelliJ IDEA.app") // macOS path provided by user
+//        local("/Applications/IntelliJ IDEA.app") // macOS path provided by user
+        create("IC", "2024.3")
 
         // Depend on the Java plugin module, necessary for many Java-related features
         bundledPlugin("com.intellij.java")
