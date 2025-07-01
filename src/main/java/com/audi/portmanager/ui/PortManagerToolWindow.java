@@ -94,7 +94,10 @@ public class PortManagerToolWindow {
     private AnAction killProcessAction;
 
     // 記憶體中儲存的常用埠口號列表。
-    private List<String> favoritePorts = new ArrayList<>();
+    private final List<String> favoritePorts = new ArrayList<>();
+    
+    // 重用的 PortProcessInfo 列表，避免每次查詢都創建新的列表
+    private final List<PortProcessInfo> processInfoCache = new ArrayList<>();
 
     /**
      * 構造函數：初始化 PortManagerToolWindow。
@@ -516,14 +519,17 @@ public class PortManagerToolWindow {
                         // 將進度指示器設置為不確定模式（旋轉動畫）。
                         indicator.setIndeterminate(true);
                         try {
-                            // 調用 PortService 中的方法實際執行查詢。
-                            List<PortProcessInfo> processes = portService
-                                    .findProcessesOnPort(Integer.parseInt(finalPortText));
+                            // 清空並重用快取列表
+                            processInfoCache.clear();
+                            
+                            // 調用 PortService 中的方法實際執行查詢，結果存入快取
+                            processInfoCache.addAll(portService
+                                    .findProcessesOnPort(Integer.parseInt(finalPortText)));
 
                             // 查詢完成後，回到 UI 線程更新表格內容。
                             ApplicationManager.getApplication().invokeLater(() -> {
                                 tableModel.setRowCount(0); // 再次清空，以防萬一。
-                                if (processes.isEmpty()) {
+                                if (processInfoCache.isEmpty()) {
                                     // 如果未找到任何進程。
                                     // 更新表格空狀態提示（英文）。
                                     processTable.getEmptyText().setText("No processes found listening on port "
@@ -534,7 +540,7 @@ public class PortManagerToolWindow {
                                     processTable.getEmptyText()
                                             .setText("Double-click a process in the table to try terminating it.");
                                     // 將查詢到的每個進程信息添加到表格模型中。
-                                    processes.forEach(info -> tableModel
+                                    processInfoCache.forEach(info -> tableModel
                                             .addRow(new Object[] { info.getPid(), info.getPort(), info.getCommand() }));
                                     // 如果表格中有數據，自動選中第一行。
                                     if (tableModel.getRowCount() > 0) {

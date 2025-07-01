@@ -2,12 +2,12 @@ plugins {
     id("java")
     // Use the recommended alias for the IntelliJ Platform Gradle Plugin
     // alias(libs.plugins.jetbrains.intellij.platform) version "2.4.0"
-    id("org.jetbrains.intellij.platform") version "2.5.0" // Updated from 2.4.0 to 2.5.0
+    id("org.jetbrains.intellij.platform") version "2.6.0" // Updated from 2.4.0 to 2.5.0
     id("io.freefair.lombok") version "8.4" // Keep Lombok as requested
 }
 
 group = "com.audi.portmanager" // Align group ID with Java packages
-version = "1.0.0"
+version = "1.1.0"
 
 repositories {
     mavenCentral()
@@ -32,8 +32,15 @@ dependencies {
 //        local("/Applications/IntelliJ IDEA.app") // macOS path provided by user
         create("IC", "2024.3")
 
-        // Depend on the Java plugin module, necessary for many Java-related features
-        bundledPlugin("com.intellij.java")
+        // Remove Java plugin dependency to make it work in all JetBrains IDEs
+        // bundledPlugin("com.intellij.java")
+    }
+}
+
+// Configure Java toolchain
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(17))
     }
 }
 
@@ -62,7 +69,15 @@ intellijPlatform {
 
         // Plugin description displayed in the Marketplace and Plugin settings
         description.set("""
-            A plugin to easily find and kill processes running on specific ports. Supports macOS and Windows.
+            A plugin to easily find and kill processes running on specific ports. 
+            
+            Features:
+            • Find processes by port number
+            • Kill selected processes with one click
+            • Support for macOS and Windows
+            • Compatible with ALL JetBrains IDEs (IntelliJ IDEA, PyCharm, WebStorm, PhpStorm, etc.)
+            
+            Perfect for developers who need to quickly manage port conflicts across different development environments.
         """.trimIndent())
 
         // Specify compatible IntelliJ Platform versions
@@ -73,12 +88,20 @@ intellijPlatform {
 
         // Release notes for this version
         changeNotes.set("""
+            <h3>Version 1.1.0</h3>
             <ul>
-                <li>Initial release.</li>
-                <li>Find processes by port number.</li>
-                <li>Kill selected processes.</li>
-                <li>Basic UI using Tool Window.</li>
-                <li>Supports macOS and Windows.</li>
+                <li><b>NEW:</b> Full compatibility with ALL JetBrains IDEs (PyCharm, WebStorm, PhpStorm, RubyMine, GoLand, etc.)</li>
+                <li><b>FIXED:</b> Removed Java module dependency to support non-Java IDEs</li>
+                <li><b>IMPROVED:</b> Better cross-IDE compatibility</li>
+            </ul>
+            
+            <h3>Version 1.0.0</h3>
+            <ul>
+                <li>Initial release</li>
+                <li>Find processes by port number</li>
+                <li>Kill selected processes</li>
+                <li>Basic UI using Tool Window</li>
+                <li>Supports macOS and Windows</li>
             </ul>
         """.trimIndent())
     }

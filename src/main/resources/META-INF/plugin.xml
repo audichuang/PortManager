@@ -14,13 +14,23 @@
          Simple HTML elements (text formatting, paragraphs, and lists) can be added inside of <![CDATA[ ]]> tag.
          Guidelines: https://plugins.jetbrains.com/docs/marketplace/plugin-overview-page.html#plugin-description -->
     <description><![CDATA[
-    A plugin to easily find and kill processes running on specific ports. Supports macOS and Windows.
+    A plugin to easily find and kill processes running on specific ports. 
+    <br/><br/>
+    <b>Features:</b>
+    <ul>
+        <li>Find processes by port number</li>
+        <li>Kill selected processes with one click</li>
+        <li>Support for macOS and Windows</li>
+        <li>Compatible with ALL JetBrains IDEs (IntelliJ IDEA, PyCharm, WebStorm, PhpStorm, etc.)</li>
+    </ul>
+    <br/>
+    Perfect for developers who need to quickly manage port conflicts across different development environments.
   ]]></description>
 
     <!-- Product and plugin compatibility requirements.
          Read more: https://plugins.jetbrains.com/docs/intellij/plugin-compatibility.html -->
     <depends>com.intellij.modules.platform</depends>
-    <depends>com.intellij.modules.java</depends>
+    <!-- Removed Java dependency to support all JetBrains IDEs -->
 
     <!-- Extension points defined by the plugin.
          Read more: https://plugins.jetbrains.com/docs/intellij/plugin-extension-points.html -->

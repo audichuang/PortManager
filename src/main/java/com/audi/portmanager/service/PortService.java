@@ -24,39 +24,48 @@ public class PortService {
 
     private static final Logger LOG = Logger.getInstance(PortService.class);
 
-    // ==================== 正則表達式模式 ====================
+    // ==================== 正則表達式模式（延遲初始化以節省記憶體）====================
+    private static Pattern windowsNetstatPattern;
+    private static Pattern macosLsofPattern;
+    private static Pattern linuxSsPattern;
+    private static Pattern linuxNetstatPattern;
 
-    /**
-     * Windows netstat 輸出解析模式
-     * 匹配類似 "TCP 0.0.0.0:8080 0.0.0.0:0 LISTENING 12345" 的行
-     */
-    private static final Pattern WINDOWS_NETSTAT_PATTERN = Pattern
-            .compile("^\\s*TCP\\s+\\S+\\:(\\d+)\\s+\\S+\\s+LISTENING\\s+(\\d+).*$", Pattern.MULTILINE);
+    // 使用延遲初始化來節省記憶體
+    private static Pattern getWindowsNetstatPattern() {
+        if (windowsNetstatPattern == null) {
+            windowsNetstatPattern = Pattern.compile(
+                "^\\s*TCP\\s+\\S+\\:(\\d+)\\s+\\S+\\s+LISTENING\\s+(\\d+).*$", 
+                Pattern.MULTILINE);
+        }
+        return windowsNetstatPattern;
+    }
 
-    /**
-     * macOS lsof 輸出解析模式
-     * 匹配類似 "java 12345 audi 50u IPv6 0x... 0t0 TCP *:8080 (LISTEN)" 的行
-     * 或 "node 67890 audi 20u IPv4 0x... 0t0 TCP localhost:3000 (LISTEN)" 的行
-     */
-    private static final Pattern MACOS_LSOF_PATTERN = Pattern.compile(
-            "^(\\S+)\\s+(\\d+)\\s+\\S+\\s+\\S+\\s+(?:IPv[46]|\\*)\\s+\\S+\\s+\\S+\\s+TCP\\s+(?:\\S*:|\\*:)(\\d+)\\s+\\(LISTEN\\).*$",
-            Pattern.MULTILINE);
+    private static Pattern getMacosLsofPattern() {
+        if (macosLsofPattern == null) {
+            macosLsofPattern = Pattern.compile(
+                "^(\\S+)\\s+(\\d+)\\s+\\S+\\s+\\S+\\s+(?:IPv[46]|\\*)\\s+\\S+\\s+\\S+\\s+TCP\\s+(?:\\S*:|\\*:)(\\d+)\\s+\\(LISTEN\\).*$",
+                Pattern.MULTILINE);
+        }
+        return macosLsofPattern;
+    }
 
-    /**
-     * Linux ss 命令輸出解析模式
-     * 匹配類似 "LISTEN 0 128 *:8080 *:* users:(("java",pid=1234,fd=12))" 的行
-     */
-    private static final Pattern LINUX_SS_PATTERN = Pattern.compile(
-            "LISTEN\\s+\\d+\\s+\\d+\\s+(?:.*?:)?(\\d+)\\s+.*?\\s+users:\\(\\(\"([^\"]+)\",pid=(\\d+),.*?\\)\\)",
-            Pattern.MULTILINE);
+    private static Pattern getLinuxSsPattern() {
+        if (linuxSsPattern == null) {
+            linuxSsPattern = Pattern.compile(
+                "LISTEN\\s+\\d+\\s+\\d+\\s+(?:.*?:)?(\\d+)\\s+.*?\\s+users:\\(\\(\"([^\"]+)\",pid=(\\d+),.*?\\)\\)",
+                Pattern.MULTILINE);
+        }
+        return linuxSsPattern;
+    }
 
-    /**
-     * Linux netstat 命令輸出解析模式
-     * 匹配類似 "tcp 0 0 0.0.0.0:8080 0.0.0.0:* LISTEN 1234/java" 的行
-     */
-    private static final Pattern LINUX_NETSTAT_PATTERN = Pattern.compile(
-            "tcp\\s+\\d+\\s+\\d+\\s+\\S+:(\\d+)\\s+\\S+\\s+LISTEN\\s+(\\d+)(?:/([^\\s]+))?",
-            Pattern.MULTILINE);
+    private static Pattern getLinuxNetstatPattern() {
+        if (linuxNetstatPattern == null) {
+            linuxNetstatPattern = Pattern.compile(
+                "tcp\\s+\\d+\\s+\\d+\\s+\\S+:(\\d+)\\s+\\S+\\s+LISTEN\\s+(\\d+)(?:/([^\\s]+))?",
+                Pattern.MULTILINE);
+        }
+        return linuxNetstatPattern;
+    }
 
     /**
      * 查找在指定埠口上監聽的進程
@@ -74,24 +83,24 @@ public class PortService {
             // Windows 系統: 執行 netstat -ano 命令，然後在Java中過濾結果
             GeneralCommandLine commandLine = new GeneralCommandLine("netstat", "-ano");
             commandOutput = executeCommand(commandLine);
-            parseWindowsOutput(processes, commandOutput, WINDOWS_NETSTAT_PATTERN, port);
+            parseWindowsOutput(processes, commandOutput, getWindowsNetstatPattern(), port);
         } else if (SystemInfo.isMac) {
             // macOS 系統: 執行 lsof -i tcp:埠口 -sTCP:LISTEN -P -n 命令
             GeneralCommandLine commandLine = new GeneralCommandLine("lsof", "-i", "tcp:" + port, "-sTCP:LISTEN", "-P", "-n");
             commandOutput = executeCommand(commandLine);
-            parseMacOutput(processes, commandOutput, MACOS_LSOF_PATTERN, port);
+            parseMacOutput(processes, commandOutput, getMacosLsofPattern(), port);
         } else if (SystemInfo.isLinux) {
             // Linux 系統: 首先嘗試使用 ss 命令，如果失敗則嘗試 netstat 命令
             try {
                 GeneralCommandLine commandLine = new GeneralCommandLine("ss", "-tuln", "sport", "=" + port);
                 commandOutput = executeCommand(commandLine);
-                parseLinuxSsOutput(processes, commandOutput, LINUX_SS_PATTERN, port);
+                parseLinuxSsOutput(processes, commandOutput, getLinuxSsPattern(), port);
             } catch (ExecutionException e) {
                 LOG.info("ss 命令執行失敗，嘗試使用 netstat 命令", e);
                 // 備用方案：使用 netstat 命令
                 GeneralCommandLine commandLine = new GeneralCommandLine("netstat", "-tuln");
                 commandOutput = executeCommand(commandLine);
-                parseLinuxNetstatOutput(processes, commandOutput, LINUX_NETSTAT_PATTERN, port);
+                parseLinuxNetstatOutput(processes, commandOutput, getLinuxNetstatPattern(), port);
             }
         } else {
             LOG.warn("不支援的作業系統: " + SystemInfo.OS_NAME);
@@ -145,20 +154,20 @@ public class PortService {
      * @throws ExecutionException 當命令執行失敗時拋出
      */
     private String executeCommand(GeneralCommandLine commandLine) throws ExecutionException {
-        LOG.info("執行命令: " + commandLine.getCommandLineString());
+        LOG.debug("執行命令: " + commandLine.getCommandLineString());
 
-        ProcessOutput output = ExecUtil.execAndGetOutput(commandLine);
+        // 設定超時時間以避免長時間等待
+        ProcessOutput output = ExecUtil.execAndGetOutput(commandLine, 3000);
+        
         if (output.getExitCode() != 0) {
-            String error = "命令執行失敗（退出碼: " + output.getExitCode() + "）: "
-                    + commandLine.getCommandLineString() + "\n錯誤訊息: " + output.getStderr();
-
             // 在macOS上，如果沒有找到進程，lsof可能返回退出碼1，這種情況不應視為錯誤
             if (SystemInfo.isMac && commandLine.getExePath().contains("lsof") && output.getExitCode() == 1
                     && output.getStdout().isEmpty()) {
-                LOG.info("lsof未在指定埠口找到進程。");
+                LOG.debug("lsof未在指定埠口找到進程。");
                 return ""; // 返回空字串，不是錯誤
             }
 
+            String error = "命令執行失敗（退出碼: " + output.getExitCode() + "）";
             LOG.error(error);
             throw new ExecutionException(error);
         }
@@ -243,29 +252,17 @@ public class PortService {
     private String getCommandNameForPidWindows(String pid) {
         try {
             // 嘗試使用wmic獲取可執行文件路徑
-            GeneralCommandLine cmd = new GeneralCommandLine("wmic", "process", "where", "ProcessId=" + pid, "get",
-                    "ExecutablePath", "/format:list");
-            ProcessOutput output = ExecUtil.execAndGetOutput(cmd, 500); // 超時500毫秒
-
-            if (output.getExitCode() == 0 && !output.getStdout().isEmpty()) {
-                String[] lines = output.getStdout().split("[\\r\\n]+");
-                for (String line : lines) {
-                    if (line.startsWith("ExecutablePath=")) {
-                        return line.substring("ExecutablePath=".length()).trim();
-                    }
-                }
-            }
-
-            // 備用方案：使用tasklist
-            cmd = new GeneralCommandLine("tasklist", "/FI", "PID eq " + pid, "/NH", "/FO", "CSV");
-            output = ExecUtil.execAndGetOutput(cmd, 500);
+            // 直接使用 tasklist，避免 wmic 的高記憶體消耗
+            GeneralCommandLine cmd = new GeneralCommandLine("tasklist", "/FI", "PID eq " + pid, "/NH", "/FO", "CSV");
+            ProcessOutput output = ExecUtil.execAndGetOutput(cmd, 500);
 
             if (output.getExitCode() == 0 && !output.getStdout().isEmpty()) {
                 String[] csvParts = output.getStdout().split(",");
                 if (csvParts.length > 0) {
-                    return csvParts[0].replace("\\\"", "").trim(); // 獲取映像名稱
+                    return csvParts[0].replace("\\\"", "").trim();
                 }
             }
+
         } catch (Exception e) {
             LOG.warn("無法在Windows上獲取PID " + pid + " 的命令名稱", e);
         }
