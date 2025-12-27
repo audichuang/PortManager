@@ -64,3 +64,5 @@ logs
 out/
 self-update.lock
 .intellijPlatform/
+.run
+.run/
