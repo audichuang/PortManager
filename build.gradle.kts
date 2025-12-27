@@ -52,7 +52,7 @@ intellijPlatform {
         """.trimIndent()
 
         ideaVersion {
-            sinceBuild = "252"
+            sinceBuild = "241"  // 兼容 2024.1+，用 2025.2 SDK 開發測試
             untilBuild = provider { null }  // No upper limit for future compatibility
         }
 
@@ -86,6 +86,12 @@ intellijPlatform {
         ides {
             recommended()
         }
+    }
+    
+    // 從環境變數或 gradle property 讀取 token
+    publishing {
+        token = providers.environmentVariable("JETBRAINS_MARKETPLACE_TOKEN")
+            .orElse(providers.gradleProperty("intellijPlatform.publishing.token"))
     }
 }
 

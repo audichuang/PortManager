@@ -66,3 +66,6 @@ self-update.lock
 .intellijPlatform/
 .run
 .run/
+
+# Local properties with secrets (API tokens, etc.)
+gradle.properties.local
