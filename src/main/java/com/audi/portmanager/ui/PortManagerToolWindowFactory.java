@@ -30,6 +30,9 @@ public class PortManagerToolWindowFactory implements ToolWindowFactory, DumbAwar
         ContentFactory contentFactory = ContentFactory.getInstance();
         Content content = contentFactory.createContent(portManagerToolWindow.getContent(), "", false);
 
+        // 註冊 Disposer，確保 Tool Window 關閉時自動清理資源
+        content.setDisposer(portManagerToolWindow);
+
         // 將創建的內容添加到工具窗口中
         toolWindow.getContentManager().addContent(content);
     }

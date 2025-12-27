@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "com.audi.portmanager"
-version = "1.1.0"
+version = "1.1.1"
 
 repositories {
     mavenCentral()
@@ -27,6 +27,8 @@ dependencies {
 }
 
 intellijPlatform {
+    buildSearchableOptions = false  // 加速開發編譯
+    
     pluginConfiguration {
         name = "Port Manager"
         version = project.version.toString()
@@ -55,6 +57,13 @@ intellijPlatform {
         }
 
         changeNotes = """
+            <h3>Version 1.1.1</h3>
+            <ul>
+                <li><b>IMPROVED:</b> Memory management with proper Disposable implementation</li>
+                <li><b>IMPROVED:</b> Listener cleanup to prevent memory leaks</li>
+                <li><b>IMPROVED:</b> Faster development build with optimized configuration</li>
+            </ul>
+            
             <h3>Version 1.1.0</h3>
             <ul>
                 <li><b>NEW:</b> Full compatibility with ALL JetBrains IDEs (PyCharm, WebStorm, PhpStorm, RubyMine, GoLand, etc.)</li>

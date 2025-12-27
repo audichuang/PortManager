@@ -9,6 +9,7 @@ import com.intellij.notification.NotificationType;
 import com.intellij.notification.Notifications;
 import com.intellij.openapi.actionSystem.*;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.Disposable;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
@@ -53,7 +54,7 @@ import java.util.List;
  * 4. 提供便捷的進程終止功能，可透過工具列按鈕（垃圾桶圖標）或直接雙擊表格行來操作。
  * 5. 提供常用埠口的管理介面，支援新增、刪除及拖放排序。
  */
-public class PortManagerToolWindow {
+public class PortManagerToolWindow implements Disposable {
 
     // 日誌記錄器，用於記錄插件運行時的詳細資訊和潛在錯誤。
     private static final Logger LOG = Logger.getInstance(PortManagerToolWindow.class);
@@ -95,9 +96,15 @@ public class PortManagerToolWindow {
 
     // 記憶體中儲存的常用埠口號列表。
     private final List<String> favoritePorts = new ArrayList<>();
-    
+
     // 重用的 PortProcessInfo 列表，避免每次查詢都創建新的列表
     private final List<PortProcessInfo> processInfoCache = new ArrayList<>();
+
+    // --- 監聽器引用（用於在 dispose 時清理）---
+    private volatile boolean disposed = false;
+    private KeyAdapter portInputKeyAdapter;
+    private javax.swing.event.ListSelectionListener favoriteListSelectionListener;
+    private MouseAdapter processTableMouseAdapter;
 
     /**
      * 構造函數：初始化 PortManagerToolWindow。
@@ -396,7 +403,7 @@ public class PortManagerToolWindow {
         settingsButton.addActionListener(e -> showFavoritePortsDialog());
 
         // 為埠口輸入框 (portInputField) 添加 KeyListener。
-        portInputField.addKeyListener(new KeyAdapter() {
+        portInputKeyAdapter = new KeyAdapter() {
             @Override
             public void keyPressed(KeyEvent e) {
                 // 監聽 Enter 鍵按下事件。
@@ -404,10 +411,11 @@ public class PortManagerToolWindow {
                     findProcessesAction(); // 如果按下 Enter，觸發查找操作。
                 }
             }
-        });
+        };
+        portInputField.addKeyListener(portInputKeyAdapter);
 
         // 為左側常用埠口列表 (favoritePortsList) 添加 ListSelectionListener。
-        favoritePortsList.addListSelectionListener(e -> {
+        favoriteListSelectionListener = e -> {
             // 確保事件是在選擇穩定後觸發的（避免在拖動選擇過程中觸發多次）。
             if (!e.getValueIsAdjusting()) {
                 String selectedPort = favoritePortsList.getSelectedValue(); // 獲取當前選中的埠號。
@@ -417,7 +425,8 @@ public class PortManagerToolWindow {
                     findProcessesAction(); // 自動觸發對該埠口的查詢。
                 }
             }
-        });
+        };
+        favoritePortsList.addListSelectionListener(favoriteListSelectionListener);
 
         // 為進程表格 (processTable) 的選擇模型添加 ListSelectionListener。
         // 主要目的是為了觸發 ActionToolbar 的狀態更新。
@@ -429,7 +438,7 @@ public class PortManagerToolWindow {
         });
 
         // 為進程表格 (processTable) 添加 MouseListener，以處理雙擊事件。
-        processTable.addMouseListener(new MouseAdapter() {
+        processTableMouseAdapter = new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
                 // 判斷是否是滑鼠雙擊事件。
@@ -452,7 +461,8 @@ public class PortManagerToolWindow {
                     }
                 }
             }
-        });
+        };
+        processTable.addMouseListener(processTableMouseAdapter);
     }
 
     // --- 主要業務邏輯方法 ---
@@ -521,7 +531,7 @@ public class PortManagerToolWindow {
                         try {
                             // 清空並重用快取列表
                             processInfoCache.clear();
-                            
+
                             // 調用 PortService 中的方法實際執行查詢，結果存入快取
                             processInfoCache.addAll(portService
                                     .findProcessesOnPort(Integer.parseInt(finalPortText)));
@@ -880,6 +890,35 @@ public class PortManagerToolWindow {
      */
     public JPanel getContent() {
         return toolWindowContent;
+    }
+
+    /**
+     * Disposable 介面實作。
+     * 當 Tool Window 關閉或 Plugin 卸載時清理資源，防止記憶體洩漏。
+     */
+    @Override
+    public void dispose() {
+        if (disposed) {
+            return;
+        }
+        disposed = true;
+
+        // 清理快取
+        processInfoCache.clear();
+        favoritePorts.clear();
+
+        // 移除監聽器以防止記憶體洩漏
+        if (portInputKeyAdapter != null && portInputField != null) {
+            portInputField.removeKeyListener(portInputKeyAdapter);
+        }
+        if (favoriteListSelectionListener != null && favoritePortsList != null) {
+            favoritePortsList.removeListSelectionListener(favoriteListSelectionListener);
+        }
+        if (processTableMouseAdapter != null && processTable != null) {
+            processTable.removeMouseListener(processTableMouseAdapter);
+        }
+
+        LOG.info("PortManagerToolWindow disposed and resources cleaned up.");
     }
 
     // --- 內部類別定義 (渲染器, TransferHandler) ---
