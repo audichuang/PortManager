@@ -35,6 +35,10 @@
     <!-- Extension points defined by the plugin.
          Read more: https://plugins.jetbrains.com/docs/intellij/plugin-extension-points.html -->
     <extensions defaultExtensionNs="com.intellij">
+        <!-- Register Application Services -->
+        <applicationService serviceImplementation="com.audi.portmanager.service.PortService"/>
+        <applicationService serviceImplementation="com.audi.portmanager.service.FavoritePortsService"/>
+
         <!-- Register the Tool Window -->
         <toolWindow factoryClass="com.audi.portmanager.ui.PortManagerToolWindowFactory"
                     id="Port Manager"
@@ -43,6 +47,10 @@
 
         <!-- Register Notification Group -->
         <notificationGroup id="PortManagerNotifications" displayType="BALLOON"/>
+
+        <!-- Register Search Everywhere Contributor for Port search (Shift+Shift integration) -->
+        <searchEverywhereContributor
+            implementation="com.audi.portmanager.action.PortSearchEverywhereContributor$Factory"/>
     </extensions>
 
     <!-- Actions can be defined here or in separate files -->

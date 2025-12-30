@@ -5,6 +5,8 @@ import com.intellij.execution.ExecutionException;
 import com.intellij.execution.configurations.GeneralCommandLine;
 import com.intellij.execution.process.ProcessOutput;
 import com.intellij.execution.util.ExecUtil;
+import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.components.Service;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.util.SystemInfo;
 
@@ -15,12 +17,24 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * 埠口管理服務
+ * 埠口管理服務 (Application Service)
  * <p>
  * 此服務負責查詢特定埠口上正在監聽的進程，以及提供終止這些進程的功能。
  * 支援 Windows、macOS 和 Linux 三種主要作業系統。
+ * <p>
+ * 作為 Application-level Service，可透過 {@link #getInstance()} 取得單例實例。
  */
-public class PortService {
+@Service(Service.Level.APP)
+public final class PortService {
+
+    /**
+     * 取得 PortService 單例實例
+     *
+     * @return PortService 實例
+     */
+    public static PortService getInstance() {
+        return ApplicationManager.getApplication().getService(PortService.class);
+    }
 
     private static final Logger LOG = Logger.getInstance(PortService.class);
 
@@ -34,8 +48,8 @@ public class PortService {
     private static Pattern getWindowsNetstatPattern() {
         if (windowsNetstatPattern == null) {
             windowsNetstatPattern = Pattern.compile(
-                "^\\s*TCP\\s+\\S+\\:(\\d+)\\s+\\S+\\s+LISTENING\\s+(\\d+).*$", 
-                Pattern.MULTILINE);
+                    "^\\s*TCP\\s+\\S+\\:(\\d+)\\s+\\S+\\s+LISTENING\\s+(\\d+).*$",
+                    Pattern.MULTILINE);
         }
         return windowsNetstatPattern;
     }
@@ -43,8 +57,8 @@ public class PortService {
     private static Pattern getMacosLsofPattern() {
         if (macosLsofPattern == null) {
             macosLsofPattern = Pattern.compile(
-                "^(\\S+)\\s+(\\d+)\\s+\\S+\\s+\\S+\\s+(?:IPv[46]|\\*)\\s+\\S+\\s+\\S+\\s+TCP\\s+(?:\\S*:|\\*:)(\\d+)\\s+\\(LISTEN\\).*$",
-                Pattern.MULTILINE);
+                    "^(\\S+)\\s+(\\d+)\\s+\\S+\\s+\\S+\\s+(?:IPv[46]|\\*)\\s+\\S+\\s+\\S+\\s+TCP\\s+(?:\\S*:|\\*:)(\\d+)\\s+\\(LISTEN\\).*$",
+                    Pattern.MULTILINE);
         }
         return macosLsofPattern;
     }
@@ -52,8 +66,8 @@ public class PortService {
     private static Pattern getLinuxSsPattern() {
         if (linuxSsPattern == null) {
             linuxSsPattern = Pattern.compile(
-                "LISTEN\\s+\\d+\\s+\\d+\\s+(?:.*?:)?(\\d+)\\s+.*?\\s+users:\\(\\(\"([^\"]+)\",pid=(\\d+),.*?\\)\\)",
-                Pattern.MULTILINE);
+                    "LISTEN\\s+\\d+\\s+\\d+\\s+(?:.*?:)?(\\d+)\\s+.*?\\s+users:\\(\\(\"([^\"]+)\",pid=(\\d+),.*?\\)\\)",
+                    Pattern.MULTILINE);
         }
         return linuxSsPattern;
     }
@@ -61,8 +75,8 @@ public class PortService {
     private static Pattern getLinuxNetstatPattern() {
         if (linuxNetstatPattern == null) {
             linuxNetstatPattern = Pattern.compile(
-                "tcp\\s+\\d+\\s+\\d+\\s+\\S+:(\\d+)\\s+\\S+\\s+LISTEN\\s+(\\d+)(?:/([^\\s]+))?",
-                Pattern.MULTILINE);
+                    "tcp\\s+\\d+\\s+\\d+\\s+\\S+:(\\d+)\\s+\\S+\\s+LISTEN\\s+(\\d+)(?:/([^\\s]+))?",
+                    Pattern.MULTILINE);
         }
         return linuxNetstatPattern;
     }
@@ -86,7 +100,8 @@ public class PortService {
             parseWindowsOutput(processes, commandOutput, getWindowsNetstatPattern(), port);
         } else if (SystemInfo.isMac) {
             // macOS 系統: 執行 lsof -i tcp:埠口 -sTCP:LISTEN -P -n 命令
-            GeneralCommandLine commandLine = new GeneralCommandLine("lsof", "-i", "tcp:" + port, "-sTCP:LISTEN", "-P", "-n");
+            GeneralCommandLine commandLine = new GeneralCommandLine("lsof", "-i", "tcp:" + port, "-sTCP:LISTEN", "-P",
+                    "-n");
             commandOutput = executeCommand(commandLine);
             parseMacOutput(processes, commandOutput, getMacosLsofPattern(), port);
         } else if (SystemInfo.isLinux) {
@@ -158,7 +173,7 @@ public class PortService {
 
         // 設定超時時間以避免長時間等待
         ProcessOutput output = ExecUtil.execAndGetOutput(commandLine, 3000);
-        
+
         if (output.getExitCode() != 0) {
             // 在macOS上，如果沒有找到進程，lsof可能返回退出碼1，這種情況不應視為錯誤
             if (SystemInfo.isMac && commandLine.getExePath().contains("lsof") && output.getExitCode() == 1
@@ -231,7 +246,8 @@ public class PortService {
     /**
      * 解析Linux系統netstat命令輸出
      */
-    private void parseLinuxNetstatOutput(List<PortProcessInfo> processes, String output, Pattern pattern, int targetPort) {
+    private void parseLinuxNetstatOutput(List<PortProcessInfo> processes, String output, Pattern pattern,
+            int targetPort) {
         Matcher matcher = pattern.matcher(output);
         while (matcher.find()) {
             String portStr = matcher.group(1);

@@ -1,6 +1,8 @@
 package com.audi.portmanager.ui;
 
 import com.audi.portmanager.model.PortProcessInfo;
+import com.audi.portmanager.service.FavoritePortsService;
+import com.audi.portmanager.service.FavoritePortsService.FavoritePort;
 import com.audi.portmanager.service.PortService;
 import com.intellij.icons.AllIcons;
 import com.intellij.ide.util.PropertiesComponent;
@@ -21,7 +23,6 @@ import com.intellij.ui.IdeBorderFactory;
 import com.intellij.ui.JBColor;
 import com.intellij.ui.SideBorder;
 import com.intellij.ui.components.*;
-import com.intellij.ui.components.panels.VerticalLayout;
 import com.intellij.ui.table.JBTable;
 import com.intellij.util.ui.JBUI;
 import com.intellij.util.ui.UIUtil;
@@ -106,6 +107,9 @@ public class PortManagerToolWindow implements Disposable {
     private javax.swing.event.ListSelectionListener favoriteListSelectionListener;
     private MouseAdapter processTableMouseAdapter;
 
+    // 記錄當前是否處於「Scan All」模式（用於判斷刪除後如何刷新）
+    private boolean scanAllMode = false;
+
     /**
      * 構造函數：初始化 PortManagerToolWindow。
      *
@@ -132,21 +136,17 @@ public class PortManagerToolWindow implements Disposable {
         // 為根面板設定內邊距，增加視覺舒適度。
         toolWindowContent.setBorder(JBUI.Borders.empty(8));
 
-        // 創建界面頂部的工具列（包含輸入框和按鈕）。
-        JPanel topToolbarPanel = createTopToolbarPanel();
         // 創建界面左側的面板（用於顯示常用埠口）。
         JPanel leftPanel = createLeftPanel();
-        // 創建界面右側的面板（用於顯示進程表格和相關操作）。
+        // 創建界面右側的面板（用於顯示 Port 輸入區和進程表格）。
         JPanel rightPanel = createRightPanel();
 
         // 創建水平分割面板，將左側和右側面板分開。
         mainSplitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, leftPanel, rightPanel);
         mainSplitPane.setDividerSize(JBUI.scale(5)); // 設定分隔條的視覺寬度。
-        mainSplitPane.setResizeWeight(0.25); // 設定初始狀態下，左側面板佔總寬度的 25%。
+        mainSplitPane.setResizeWeight(0.4); // 設定初始狀態下，左側面板佔總寬度的 40%（給 Favorites 更多空間）。
         mainSplitPane.setBorder(BorderFactory.createEmptyBorder()); // 移除分割面板自身的邊框，使界面更簡潔。
 
-        // 將頂部工具列放置在根面板的北部區域。
-        toolWindowContent.add(topToolbarPanel, BorderLayout.NORTH);
         // 將包含左右兩部分的分割面板放置在根面板的中央區域。
         toolWindowContent.add(mainSplitPane, BorderLayout.CENTER);
 
@@ -156,53 +156,13 @@ public class PortManagerToolWindow implements Disposable {
     }
 
     /**
-     * 創建並返回包含埠口輸入框和主要操作按鈕的頂部工具列面板。
-     *
-     * @return 頂部工具列的 JPanel 實例。
+     * 此方法已不再使用，Port 輸入區已移到右側面板。
+     * 
+     * @deprecated 保留以便後向兼容
      */
+    @Deprecated
     private JPanel createTopToolbarPanel() {
-        // 創建工具列主面板，使用邊界佈局，設定組件間的水平間距。
-        JPanel panel = new JBPanel<>(new BorderLayout(JBUI.scale(8), 0));
-        panel.setBorder(JBUI.Borders.emptyBottom(5)); // 在面板底部添加外邊距。
-
-        // 創建容納 "Port:" 標籤和輸入框的子面板。
-        JPanel inputPanel = new JBPanel<>(new BorderLayout(JBUI.scale(5), 0));
-        // 創建 "Port:" 標籤。
-        JLabel portLabel = new JBLabel("Port:");
-        portLabel.setFont(JBUI.Fonts.label().asBold()); // 設置標籤文字為粗體。
-
-        // 創建埠口輸入框 (JBTextField)。
-        portInputField = new JBTextField();
-        portInputField.setBorder(IdeBorderFactory.createBorder(SideBorder.ALL)); // 設置標準 IntelliJ 風格的邊框。
-        portInputField.setToolTipText("Enter port number (1-65535)"); // 設定滑鼠懸停時的提示文字（英文）。
-
-        // 將標籤添加到輸入面板的左側（西部）。
-        inputPanel.add(portLabel, BorderLayout.WEST);
-        // 將輸入框添加到輸入面板的中央。
-        inputPanel.add(portInputField, BorderLayout.CENTER);
-
-        // 創建容納 "Find" 和 "Settings" 按鈕的子面板，使用流式佈局並靠左對齊。
-        JPanel buttonsPanel = new JBPanel<>(new FlowLayout(FlowLayout.LEFT, JBUI.scale(5), 0));
-        buttonsPanel.setOpaque(false); // 使按鈕面板背景透明。
-
-        // 創建 "Find" 按鈕，並設置圖標。
-        findButton = new JButton("Find", AllIcons.Actions.Find);
-        styleMiniButton(findButton); // 應用統一的迷你按鈕樣式。
-
-        // 創建 "Settings" 按鈕，並設置圖標。
-        settingsButton = new JButton("Settings", AllIcons.General.Settings);
-        styleMiniButton(settingsButton); // 應用統一的迷你按鈕樣式。
-
-        // 將按鈕添加到按鈕面板。
-        buttonsPanel.add(findButton);
-        buttonsPanel.add(settingsButton);
-
-        // 將輸入面板（標籤+輸入框）添加到主工具列面板的中央。
-        panel.add(inputPanel, BorderLayout.CENTER);
-        // 將按鈕面板添加到主工具列面板的右側（東部）。
-        panel.add(buttonsPanel, BorderLayout.EAST);
-
-        return panel;
+        return new JBPanel<>();
     }
 
     /**
@@ -212,7 +172,7 @@ public class PortManagerToolWindow implements Disposable {
      */
     private JPanel createLeftPanel() {
         // 創建左側面板，使用邊界佈局，設定組件垂直間距。
-        JPanel panel = new JBPanel<>(new BorderLayout(0, JBUI.scale(3)));
+        JPanel panel = new JBPanel<>(new BorderLayout(0, JBUI.scale(5)));
         // 為面板設置帶標題的邊框（英文標題 "Favorites"）。
         panel.setBorder(IdeBorderFactory.createTitledBorder("Favorites", false, JBUI.insets(5, 0, 0, 0)));
 
@@ -228,19 +188,73 @@ public class PortManagerToolWindow implements Disposable {
         // 將列表放入一個可滾動的面板中，以便在列表項過多時可以滾動查看。
         JBScrollPane scrollPane = new JBScrollPane(favoritePortsList);
         scrollPane.setBorder(BorderFactory.createEmptyBorder()); // 移除滾動面板自身的邊框，保持界面簡潔。
+
+        // 創建底部按鈕面板，包含「Scan All」和「Settings」按鈕
+        JPanel bottomPanel = new JBPanel<>(new GridLayout(1, 2, JBUI.scale(5), 0));
+        bottomPanel.setBorder(JBUI.Borders.emptyTop(5));
+
+        JButton scanAllButton = new JButton("Scan All", AllIcons.Actions.Refresh);
+        scanAllButton.setToolTipText("Scan all favorite ports at once");
+        scanAllButton.addActionListener(e -> scanAllFavorites());
+
+        settingsButton = new JButton("Settings", AllIcons.General.Settings);
+        settingsButton.setToolTipText("Manage favorite ports");
+
+        bottomPanel.add(scanAllButton);
+        bottomPanel.add(settingsButton);
+
         // 將包含列表的滾動面板添加到左側面板的中央區域。
         panel.add(scrollPane, BorderLayout.CENTER);
+        // 將按鈕面板添加到底部
+        panel.add(bottomPanel, BorderLayout.SOUTH);
+
         return panel;
     }
 
     /**
-     * 創建並返回包含進程表格和上方操作工具列的右側面板。
+     * 創建並返回包含 Port 輸入區、進程表格和上方操作工具列的右側面板。
      *
      * @return 右側面板的 JPanel 實例。
      */
     private JPanel createRightPanel() {
         // 創建右側面板，使用邊界佈局，設定組件垂直間距。
-        JPanel panel = new JBPanel<>(new BorderLayout(0, JBUI.scale(3)));
+        JPanel panel = new JBPanel<>(new BorderLayout(0, JBUI.scale(5)));
+
+        // === 頂部：Port 輸入區 + 按鈕 ===
+        JPanel topPanel = new JBPanel<>(new BorderLayout(JBUI.scale(8), 0));
+        topPanel.setBorder(JBUI.Borders.emptyBottom(5));
+
+        // Port 輸入區
+        JPanel inputPanel = new JBPanel<>(new BorderLayout(JBUI.scale(5), 0));
+        JLabel portLabel = new JBLabel("Port:");
+        portLabel.setFont(JBUI.Fonts.label().asBold());
+
+        portInputField = new JBTextField(8);
+        portInputField.setBorder(IdeBorderFactory.createBorder(SideBorder.ALL));
+        portInputField.setToolTipText("Enter port number (1-65535)");
+        portInputField.getEmptyText().setText("e.g. 8080");
+
+        inputPanel.add(portLabel, BorderLayout.WEST);
+        inputPanel.add(portInputField, BorderLayout.CENTER);
+
+        // 按鈕面板（Find + Kill）
+        JPanel buttonsPanel = new JBPanel<>(new FlowLayout(FlowLayout.RIGHT, JBUI.scale(5), 0));
+        buttonsPanel.setOpaque(false);
+
+        findButton = new JButton("Find", AllIcons.Actions.Find);
+        findButton.setToolTipText("Search for processes on this port");
+
+        // Kill 按鈕（替代原本的 ActionToolbar）
+        JButton killButton = new JButton("Kill", AllIcons.Actions.GC);
+        killButton.setToolTipText("Terminate selected process");
+        killButton.setEnabled(false); // 初始禁用
+        killButton.addActionListener(e -> killSelectedProcess());
+
+        buttonsPanel.add(findButton);
+        buttonsPanel.add(killButton);
+
+        topPanel.add(inputPanel, BorderLayout.CENTER);
+        topPanel.add(buttonsPanel, BorderLayout.EAST);
 
         // 初始化表格的數據模型 (DefaultTableModel)。
         // 定義表格的列名："PID", "Port", "Process/Command"。
@@ -256,15 +270,22 @@ public class PortManagerToolWindow implements Disposable {
         processTable = new JBTable(tableModel);
         processTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION); // 設置表格為單行選擇模式。
         processTable.getTableHeader().setReorderingAllowed(false); // 禁止用戶拖動列頭來改變列的順序。
-        processTable.setShowGrid(true); // 顯示單元格之間的網格線。
-        processTable.setGridColor(JBColor.border()); // 設定網格線的顏色，使其與 IntelliJ 主題的邊框顏色一致。
-        processTable.setIntercellSpacing(new Dimension(0, 0)); // 移除單元格之間的額外間距。
+        processTable.setShowGrid(false); // 移除網格線以獲得更現代的外觀。
+        processTable.setIntercellSpacing(new Dimension(0, 1)); // 行間添加 1px 間距作為視覺分隔。
         processTable.setFillsViewportHeight(true); // 當表格數據不足以填滿視圖高度時，自動擴展背景。
-        processTable.setRowHeight(JBUI.scale(24)); // 設置表格中每一行的高度。
+        processTable.setRowHeight(JBUI.scale(36)); // 增加行高，更容易閱讀
         processTable.setDefaultRenderer(Object.class, new ProcessTableCellRenderer()); // 為所有數據類型設置自定義的單元格渲染器。
 
         // 為表格設置滑鼠懸停提示，告知用戶雙擊可以終止進程（英文）。
         processTable.setToolTipText("Double-click a process in the table to try terminating it.");
+
+        // 監聽表格選擇變化，更新 Kill 按鈕狀態
+        JButton finalKillButton = killButton;
+        processTable.getSelectionModel().addListSelectionListener(e -> {
+            if (!e.getValueIsAdjusting()) {
+                finalKillButton.setEnabled(processTable.getSelectedRow() != -1);
+            }
+        });
 
         // *** 修改: 調整 PID 和 Port 欄位寬度，使其大小相似且適中 ***
         // 獲取表格的列模型，以設置各列的寬度屬性。
@@ -291,10 +312,8 @@ public class PortManagerToolWindow implements Disposable {
         JBScrollPane scrollPane = new JBScrollPane(processTable);
         scrollPane.setBorder(IdeBorderFactory.createBorder(SideBorder.ALL)); // 為滾動面板添加標準邊框。
 
-        // 創建位於表格上方的操作工具列（包含 "Kill Process" 按鈕）。
-        ActionToolbar actionToolbar = createTableToolbar();
-        // 將工具列添加到右側面板的北部區域。
-        panel.add(actionToolbar.getComponent(), BorderLayout.NORTH);
+        // 將頂部區域（Port 輸入 + 按鈕）添加到面板北部
+        panel.add(topPanel, BorderLayout.NORTH);
         // 將包含表格的滾動面板添加到右側面板的中央區域。
         panel.add(scrollPane, BorderLayout.CENTER);
         return panel;
@@ -381,14 +400,115 @@ public class PortManagerToolWindow implements Disposable {
 
     /**
      * 更新左側常用埠口列表 (favoritePortsList) 的顯示內容。
-     * 通常在加載或保存常用埠口後調用。
+     * 從 FavoritePortsService 取得最新資料並刷新列表。
      */
     private void updateFavoritePortsList() {
         favoritePortsListModel.clear(); // 首先清空列表模型中的所有現有項。
-        // 遍歷記憶體中的 favoritePorts 列表，將每個埠號添加到列表模型中。
-        favoritePorts.forEach(favoritePortsListModel::addElement);
-        // 記錄日誌，說明列表已更新及其包含的項目數量（英文日誌）。
-        LOG.info("Favorite ports list updated with " + favoritePorts.size() + " items.");
+
+        // 從 FavoritePortsService 取得最新的 Favorites 列表
+        List<FavoritePort> favorites = FavoritePortsService.getInstance().getFavorites();
+
+        // 將每個 FavoritePort 的顯示文字添加到列表模型中
+        for (FavoritePort fav : favorites) {
+            favoritePortsListModel.addElement(fav.getDisplayText());
+        }
+
+        // 同步更新本地快取（用於兼容性）
+        favoritePorts.clear();
+        for (FavoritePort fav : favorites) {
+            favoritePorts.add(fav.port);
+        }
+
+        // 記錄日誌
+        LOG.info("Favorite ports list updated with " + favorites.size() + " items from FavoritePortsService.");
+    }
+
+    /**
+     * 從顯示文字中提取純 Port 號碼。
+     * 顯示格式可能是 "3000" 或 "3000 - parallux"，此方法會返回純數字部分 "3000"。
+     *
+     * @param displayText 列表項的顯示文字
+     * @return 純 Port 號碼字串
+     */
+    private String extractPortNumber(String displayText) {
+        if (displayText == null || displayText.isEmpty()) {
+            return "";
+        }
+        // 檢查是否包含 " - "（Label 分隔符）
+        int separatorIndex = displayText.indexOf(" - ");
+        if (separatorIndex > 0) {
+            return displayText.substring(0, separatorIndex).trim();
+        }
+        // 如果沒有分隔符，直接返回（可能是純數字）
+        return displayText.trim();
+    }
+
+    /**
+     * 掃描所有 Favorite Ports，查詢每個 Port 是否有進程佔用。
+     */
+    private void scanAllFavorites() {
+        // 進入 Scan All 模式
+        scanAllMode = true;
+
+        List<FavoritePort> favorites = FavoritePortsService.getInstance().getFavorites();
+        if (favorites.isEmpty()) {
+            Messages.showInfoMessage(toolWindow.getComponent(),
+                    "No favorite ports configured. Add some favorites first.",
+                    "No Favorites");
+            return;
+        }
+
+        // 清空輸入框和當前表格
+        portInputField.setText("");
+        tableModel.setRowCount(0);
+        processTable.getEmptyText().setText("Scanning all favorite ports...");
+
+        // 在後台執行掃描
+        ProgressManager.getInstance().run(new Task.Backgroundable(project, "Scanning All Favorite Ports", true) {
+            @Override
+            public void run(@NotNull ProgressIndicator indicator) {
+                indicator.setIndeterminate(false);
+                List<PortProcessInfo> allResults = new ArrayList<>();
+
+                for (int i = 0; i < favorites.size(); i++) {
+                    if (indicator.isCanceled()) {
+                        break;
+                    }
+
+                    FavoritePort fav = favorites.get(i);
+                    indicator.setFraction((double) i / favorites.size());
+                    indicator.setText("Scanning port " + fav.port + "...");
+
+                    try {
+                        int port = Integer.parseInt(fav.port);
+                        List<PortProcessInfo> results = portService.findProcessesOnPort(port);
+                        allResults.addAll(results);
+                    } catch (NumberFormatException e) {
+                        LOG.warn("Invalid port number in favorites: " + fav.port);
+                    } catch (Exception e) {
+                        LOG.warn("Error scanning port " + fav.port + ": " + e.getMessage());
+                    }
+                }
+
+                // 更新 UI
+                ApplicationManager.getApplication().invokeLater(() -> {
+                    tableModel.setRowCount(0);
+                    if (allResults.isEmpty()) {
+                        processTable.getEmptyText().setText(
+                                "No processes found on any favorite ports. Double-click a process to terminate.");
+                    } else {
+                        processTable.getEmptyText().setText(
+                                "Double-click a process in the table to try terminating it.");
+                        for (PortProcessInfo info : allResults) {
+                            tableModel.addRow(new Object[] { info.getPid(), info.getPort(), info.getCommand() });
+                        }
+                        if (tableModel.getRowCount() > 0) {
+                            processTable.setRowSelectionInterval(0, 0);
+                        }
+                    }
+                });
+            }
+        });
     }
 
     // --- 事件監聽器設置 ---
@@ -418,10 +538,12 @@ public class PortManagerToolWindow implements Disposable {
         favoriteListSelectionListener = e -> {
             // 確保事件是在選擇穩定後觸發的（避免在拖動選擇過程中觸發多次）。
             if (!e.getValueIsAdjusting()) {
-                String selectedPort = favoritePortsList.getSelectedValue(); // 獲取當前選中的埠號。
-                if (selectedPort != null) { // 確保確實有選中的項。
-                    LOG.info("Favorite port selected: " + selectedPort); // 記錄選中事件（英文日誌）。
-                    portInputField.setText(selectedPort); // 將選中的埠號自動填入頂部的輸入框。
+                String selectedValue = favoritePortsList.getSelectedValue(); // 獲取當前選中項的顯示文字。
+                if (selectedValue != null) { // 確保確實有選中的項。
+                    // 從顯示文字中提取純 Port 號碼（格式可能是 "3000" 或 "3000 - parallux"）
+                    String portNumber = extractPortNumber(selectedValue);
+                    LOG.info("Favorite port selected: " + portNumber); // 記錄選中事件（英文日誌）。
+                    portInputField.setText(portNumber); // 將純埠號自動填入頂部的輸入框。
                     findProcessesAction(); // 自動觸發對該埠口的查詢。
                 }
             }
@@ -471,6 +593,8 @@ public class PortManagerToolWindow implements Disposable {
      * 根據輸入框中的埠號，執行查找相關進程的操作。
      */
     private void findProcessesAction() {
+        // 退出 Scan All 模式
+        scanAllMode = false;
         // 從埠口輸入框獲取文本，並去除首尾空白字符。
         String portText = portInputField.getText().trim();
 
@@ -657,8 +781,14 @@ public class PortManagerToolWindow implements Disposable {
                                     .setText("No running processes found. Double-click a process to terminate.");
                         }
 
-                        // *** 新增：成功終止後，重新觸發查詢以刷新列表 ***
-                        findProcessesAction();
+                        // 成功終止後，根據當前模式重新觸發查詢以刷新列表
+                        if (scanAllMode) {
+                            // Scan All 模式：重新掃描所有 Favorites
+                            scanAllFavorites();
+                        } else {
+                            // 普通模式：重新查詢當前 Port
+                            findProcessesAction();
+                        }
                     });
                 } else {
                     // 如果 PortService 返回 false 或發生異常。
@@ -684,143 +814,19 @@ public class PortManagerToolWindow implements Disposable {
     }
 
     /**
-     * 顯示用於管理常用埠口的設置對話框。
-     * 允許用戶新增、刪除和排序常用埠口。
+     * 顯示用於管理常用埠口的現代化設置對話框。
+     * 使用 FavoritePortsSettingsDialog 提供專業的 IDE 風格 UI。
      */
     private void showFavoritePortsDialog() {
-        // --- 創建對話框的根面板 ---
-        JPanel panel = new JBPanel<>(new BorderLayout(0, JBUI.scale(8)));
-        panel.setBorder(JBUI.Borders.empty(10)); // 設置面板內邊距。
-        panel.setPreferredSize(new Dimension(JBUI.scale(350), JBUI.scale(400))); // 設置對話框的建議大小。
+        // 使用現代化的 FavoritePortsSettingsDialog
+        FavoritePortsSettingsDialog dialog = new FavoritePortsSettingsDialog(toolWindow.getComponent());
 
-        // --- 創建頂部的標題和說明文字 ---
-        JPanel headerPanel = new JBPanel<>(new VerticalLayout(JBUI.scale(5)));
-        // 標題 "Favorite Ports Settings"（英文）。
-        JLabel titleLabel = new JBLabel("Favorite Ports Settings", UIUtil.ComponentStyle.LARGE);
-        titleLabel.setFont(titleLabel.getFont().deriveFont(Font.BOLD)); // 設置為粗體。
-        // 說明文字（英文）。
-        JLabel descLabel = new JBLabel("Drag and drop to reorder. Use buttons to add/remove.",
-                UIUtil.ComponentStyle.SMALL);
-        descLabel.setForeground(UIUtil.getContextHelpForeground()); // 使用標準的輔助文字顏色。
-        headerPanel.add(titleLabel);
-        headerPanel.add(descLabel);
-
-        // --- 創建中間的埠口列表 ---
-        DefaultListModel<String> portListModel = new DefaultListModel<>(); // 創建列表的數據模型。
-        favoritePorts.forEach(portListModel::addElement); // 將當前的常用埠口填充到模型中。
-        JList<String> portList = new JList<>(portListModel); // 創建 JList 組件。
-        portList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION); // 設置為單選模式。
-        portList.setCellRenderer(new PortListCellRenderer()); // 使用自定義渲染器顯示列表項。
-        portList.setDragEnabled(true); // 啟用列表項的拖放功能。
-        portList.setDropMode(DropMode.INSERT); // 設置拖放行為為插入模式。
-        portList.setTransferHandler(new PortListTransferHandler(portListModel)); // 設置處理拖放數據傳輸的 Handler。
-        JBScrollPane scrollPane = new JBScrollPane(portList); // 將列表放入滾動面板。
-        scrollPane.setBorder(IdeBorderFactory.createBorder(SideBorder.ALL)); // 為滾動面板設置邊框。
-
-        // --- 創建底部的操作按鈕 ---
-        JPanel actionPanel = new JBPanel<>(new FlowLayout(FlowLayout.LEFT, JBUI.scale(5), 0));
-        actionPanel.setBorder(JBUI.Borders.emptyTop(5)); // 在按鈕面板頂部添加外邊距。
-        // 定義按鈕的標準大小和內邊距。
-        Dimension textButtonSize = new Dimension(JBUI.scale(80), JBUI.scale(28));
-        Insets buttonMargin = JBUI.insets(0, 5, 0, 5);
-
-        // 創建 "Add" 按鈕。
-        JButton addButton = new JButton("Add", AllIcons.General.Add);
-        styleActionButton(addButton, textButtonSize, buttonMargin, "Add new favorite port"); // 設置樣式和提示（英文）。
-
-        // 創建 "Remove" 按鈕。
-        JButton deleteButton = new JButton("Remove", AllIcons.General.Remove);
-        styleActionButton(deleteButton, textButtonSize, buttonMargin, "Remove selected favorite port"); // 設置樣式和提示（英文）。
-        deleteButton.setEnabled(false); // 初始狀態下禁用移除按鈕，因為列表未選中任何項。
-
-        // 定義一個 Runnable，用於根據列表選擇狀態更新按鈕（主要是移除按鈕）的啟用狀態。
-        Runnable updateButtonStates = () -> {
-            int i = portList.getSelectedIndex(); // 獲取選中項的索引。
-            deleteButton.setEnabled(i != -1); // 如果有選中項 (i != -1)，則啟用移除按鈕。
-        };
-
-        // 為 "Add" 按鈕添加事件監聽器。
-        addButton.addActionListener(e -> {
-            // 彈出輸入對話框，讓用戶輸入新的埠號（英文提示）。
-            String input = Messages.showInputDialog(panel, "Enter port number (1-65535):", "Add Favorite Port", null);
-            if (input != null && !input.trim().isEmpty()) { // 驗證輸入是否有效。
-                try {
-                    int p = Integer.parseInt(input.trim()); // 解析輸入。
-                    if (p > 0 && p <= 65535) { // 驗證埠號範圍。
-                        String pt = input.trim();
-                        if (!portListModel.contains(pt)) { // 檢查是否已存在。
-                            portListModel.addElement(pt); // 添加到列表模型。
-                            portList.setSelectedIndex(portListModel.getSize() - 1); // 自動選中新添加的項。
-                            portList.ensureIndexIsVisible(portListModel.getSize() - 1); // 確保新項在視圖中可見。
-                        } else {
-                            // 如果已存在，顯示提示信息（英文）。
-                            Messages.showInfoMessage(panel, "This port already exists.", "Duplicate Port");
-                        }
-                    } else {
-                        // 如果範圍無效，顯示錯誤信息（英文）。
-                        Messages.showErrorDialog(panel, "Port number must be between 1 and 65535.", "Range Error");
-                    }
-                } catch (NumberFormatException ex) {
-                    // 如果格式無效，顯示錯誤信息（英文）。
-                    Messages.showErrorDialog(panel, "Please enter a valid number.", "Format Error");
-                }
-            }
-            updateButtonStates.run(); // 更新按鈕狀態。
-        });
-
-        // 為 "Remove" 按鈕添加事件監聽器。
-        deleteButton.addActionListener(e -> {
-            int i = portList.getSelectedIndex(); // 獲取選中項索引。
-            if (i != -1) { // 如果有選中項。
-                portListModel.remove(i); // 從模型中移除。
-                // 如果移除後列表仍有項目，嘗試選中一個鄰近的項目。
-                if (portListModel.getSize() > 0) {
-                    portList.setSelectedIndex(Math.min(i, portListModel.getSize() - 1));
-                }
-            }
-            updateButtonStates.run(); // 更新按鈕狀態。
-        });
-
-        // 為列表添加選擇監聽器，以便在選擇變化時更新按鈕狀態。
-        portList.addListSelectionListener(e -> {
-            if (!e.getValueIsAdjusting()) { // 確保在選擇穩定後更新。
-                updateButtonStates.run();
-            }
-        });
-
-        // 將 "Add" 和 "Remove" 按鈕添加到按鈕面板。
-        actionPanel.add(addButton);
-        actionPanel.add(deleteButton);
-
-        // --- 將所有子面板組裝到對話框的根面板中 ---
-        panel.add(headerPanel, BorderLayout.NORTH); // 頂部說明。
-        panel.add(scrollPane, BorderLayout.CENTER); // 中間列表。
-        panel.add(actionPanel, BorderLayout.SOUTH); // 底部按鈕。
-
-        // --- 顯示標準的 IntelliJ 選項對話框 ---
-        int result = JOptionPane.showOptionDialog(
-                toolWindow.getComponent(), // 指定父組件。
-                panel, // 對話框顯示的內容面板。
-                "Favorite Ports Settings", // 對話框標題（英文）。
-                JOptionPane.OK_CANCEL_OPTION, // 提供 "OK" 和 "Cancel" 選項。
-                JOptionPane.PLAIN_MESSAGE, // 不顯示額外的圖標。
-                null, // 不使用自定義圖標。
-                new String[] { "Save", "Cancel" }, // 按鈕上的文字（英文）。
-                "Save" // 預設選中的按鈕（英文）。
-        );
-
-        // 根據用戶的選擇處理結果。
-        if (result == JOptionPane.OK_OPTION) { // 如果用戶點擊了 "Save"。
-            LOG.info("Saving favorite ports settings..."); // 記錄保存操作（英文）。
-            favoritePorts.clear(); // 清空記憶體中的舊列表。
-            // 從對話框的列表模型中讀取最終的埠口順序和內容。
-            for (int i = 0; i < portListModel.getSize(); i++) {
-                favoritePorts.add(portListModel.get(i));
-            }
-            saveFavoritePorts(); // 將更新後的列表持久化保存。
-            updateFavoritePortsList(); // 更新主界面左側的常用埠口列表顯示。
-        } else { // 如果用戶點擊了 "Cancel" 或關閉了對話框。
-            LOG.debug("User cancelled favorite ports settings."); // 記錄取消操作（英文）。
+        if (dialog.showAndGet()) {
+            // 對話框儲存成功後，刷新主視窗的 Favorites 列表
+            LOG.info("Favorite ports settings saved, refreshing list...");
+            updateFavoritePortsList();
+        } else {
+            LOG.debug("User cancelled favorite ports settings dialog.");
         }
     }
 
@@ -842,29 +848,40 @@ public class PortManagerToolWindow implements Disposable {
     // --- 加載/保存/通知/獲取內容 的輔助方法 ---
 
     /**
-     * 從 IntelliJ 的 PropertiesComponent 加載之前保存的常用埠口列表。
+     * 從 FavoritePortsService 加載常用埠口列表。
+     * 如果舊格式存在，會自動遷移到新的 Service 中。
      */
     private void loadFavoritePorts() {
-        // 嘗試根據 FAVORITE_PORTS_KEY 讀取值，如果不存在則返回空字串。
-        String portsStr = propertiesComponent.getValue(FAVORITE_PORTS_KEY, "");
-        favoritePorts.clear(); // 清空當前記憶體中的列表。
-        if (!portsStr.isEmpty()) { // 如果讀取到的值非空。
-            // 按逗號分割字串，並將結果添加到 favoritePorts 列表中。
-            favoritePorts.addAll(Arrays.asList(portsStr.split(",")));
+        // 檢查是否有舊格式的資料需要遷移
+        String legacyPorts = propertiesComponent.getValue(FAVORITE_PORTS_KEY, "");
+        if (!legacyPorts.isEmpty()) {
+            // 遷移舊資料到 FavoritePortsService
+            List<String> legacyPortsList = Arrays.asList(legacyPorts.split(","));
+            FavoritePortsService.getInstance().migrateFromLegacyFormat(legacyPortsList);
+            // 清除舊格式資料，避免重複遷移
+            propertiesComponent.setValue(FAVORITE_PORTS_KEY, "");
+            LOG.info("Migrated " + legacyPortsList.size() + " ports from legacy format to FavoritePortsService.");
         }
-        // 記錄加載操作和數量（英文）。
-        LOG.info("Loaded " + favoritePorts.size() + " favorite ports.");
+
+        // 從 FavoritePortsService 載入資料
+        favoritePorts.clear();
+        List<FavoritePort> favorites = FavoritePortsService.getInstance().getFavorites();
+        for (FavoritePort fav : favorites) {
+            favoritePorts.add(fav.port);
+        }
+        LOG.info("Loaded " + favoritePorts.size() + " favorite ports from FavoritePortsService.");
     }
 
     /**
-     * 將當前記憶體中的常用埠口列表 (favoritePorts) 保存到 PropertiesComponent。
+     * 此方法已不再需要，因為 FavoritePortsService 會自動持久化。
+     * 保留此方法簽名以兼容舊代碼呼叫。
+     * 
+     * @deprecated 使用 FavoritePortsService 自動持久化
      */
+    @Deprecated
     private void saveFavoritePorts() {
-        // 使用逗號將 favoritePorts 列表中的所有元素連接成一個字串。
-        // 將這個字串以 FAVORITE_PORTS_KEY 為鍵，保存到 PropertiesComponent。
-        propertiesComponent.setValue(FAVORITE_PORTS_KEY, String.join(",", favoritePorts));
-        // 記錄保存操作和數量（英文）。
-        LOG.info("Saved " + favoritePorts.size() + " favorite ports.");
+        // FavoritePortsService 會自動處理持久化
+        LOG.debug("saveFavoritePorts() called but no action needed - FavoritePortsService handles persistence.");
     }
 
     /**
@@ -921,25 +938,98 @@ public class PortManagerToolWindow implements Disposable {
         LOG.info("PortManagerToolWindow disposed and resources cleaned up.");
     }
 
-    // --- 內部類別定義 (渲染器, TransferHandler) ---
-
     /**
-     * 用於渲染左側常用埠口列表 (favoritePortsList) 中每個列表項的自定義渲染器。
-     * 主要功能是為每個列表項添加一個書籤圖標，並調整邊距。
+     * 常用埠口列表渲染器 - 簡潔低調風格
+     * 設計特色:
+     * - 使用系統預設選中色，不誇張
+     * - Port 號碼粗體但不過大
+     * - Label 使用灰色次要色彩
+     * - 簡潔的分隔線
      */
-    private static class FavoritePortListCellRenderer extends DefaultListCellRenderer {
+    private static class FavoritePortListCellRenderer extends JPanel implements ListCellRenderer<String> {
+        private final JLabel portLabel;
+        private final JLabel nameLabel;
+        private final JLabel iconLabel;
+
+        // 低調的主題色彩
+        private final Color portTextColor = new JBColor(
+                new Color(55, 65, 81), // Gray 700
+                new Color(229, 231, 235) // Gray 200
+        );
+        private final Color labelTextColor = new JBColor(
+                new Color(107, 114, 128), // Gray 500
+                new Color(156, 163, 175) // Gray 400
+        );
+        private final Color subtleBg = new JBColor(
+                new Color(249, 250, 251), // Gray 50
+                new Color(55, 55, 60) // Zinc 800
+        );
+
+        public FavoritePortListCellRenderer() {
+            setLayout(new BorderLayout(JBUI.scale(8), 0));
+            setOpaque(true);
+            setBorder(JBUI.Borders.empty(8, 10));
+
+            // 圖標
+            iconLabel = new JLabel(AllIcons.Nodes.Favorite);
+
+            // 內容面板
+            JPanel contentPanel = new JPanel(new BorderLayout(0, JBUI.scale(1)));
+            contentPanel.setOpaque(false);
+
+            // Port 標籤 - 13pt 粗體，不過大
+            portLabel = new JLabel();
+            portLabel.setFont(JBUI.Fonts.label(13).asBold());
+
+            // Name 標籤 - 小字灰色
+            nameLabel = new JLabel();
+            nameLabel.setFont(JBUI.Fonts.smallFont());
+
+            contentPanel.add(portLabel, BorderLayout.CENTER);
+            contentPanel.add(nameLabel, BorderLayout.SOUTH);
+
+            add(iconLabel, BorderLayout.WEST);
+            add(contentPanel, BorderLayout.CENTER);
+        }
+
         @Override
-        public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected,
-                boolean cellHasFocus) {
-            // 調用父類的實現以獲取基本的 JLabel 組件和默認樣式。
-            JLabel l = (JLabel) super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
-            // 設置列表項的內邊距。
-            l.setBorder(JBUI.Borders.empty(4, 8));
-            // 為列表項設置書籤圖標。
-            l.setIcon(AllIcons.Nodes.Bookmark);
-            // 設置圖標與文字之間的間距。
-            l.setIconTextGap(JBUI.scale(4));
-            return l;
+        public Component getListCellRendererComponent(JList<? extends String> list, String value, int index,
+                boolean isSelected, boolean cellHasFocus) {
+
+            // 解析文字
+            String text = value != null ? value : "";
+            String portText = text;
+            String labelText = "";
+
+            if (text.contains(" - ")) {
+                String[] parts = text.split(" - ", 2);
+                portText = parts[0];
+                labelText = parts[1];
+            }
+
+            portLabel.setText(portText);
+            nameLabel.setText(labelText);
+            nameLabel.setVisible(!labelText.isEmpty());
+
+            // 使用系統預設的選中/非選中顏色 - 低調風格
+            if (isSelected) {
+                setBackground(list.getSelectionBackground());
+                portLabel.setForeground(list.getSelectionForeground());
+                nameLabel.setForeground(list.getSelectionForeground());
+            } else {
+                // 交替行背景
+                Color baseBg = UIUtil.getListBackground();
+                setBackground(index % 2 == 0 ? baseBg : subtleBg);
+                portLabel.setForeground(portTextColor);
+                nameLabel.setForeground(labelTextColor);
+            }
+
+            // 簡潔的底部分隔線
+            setBorder(BorderFactory.createCompoundBorder(
+                    JBUI.Borders.customLine(JBColor.border(), 0, 0, 1, 0),
+                    JBUI.Borders.empty(8, 10)));
+
+            return this;
         }
     }
 
@@ -964,52 +1054,66 @@ public class PortManagerToolWindow implements Disposable {
     }
 
     /**
-     * 用於渲染右側進程表格 (processTable) 中單元格的自定義渲染器。
-     * 負責處理單元格的背景色（斑馬紋）、前景色、邊框以及 PID 列的特殊樣式。
+     * 進程表格渲染器 - 簡潔低調風格
+     * 設計特色: 統一的視覺風格，與 Favorites 列表一致
      */
     private static class ProcessTableCellRenderer extends DefaultTableCellRenderer {
-        // 定義普通單元格使用的邊框（提供內邊距）。
-        private final Border normalBorder = JBUI.Borders.empty(4, 6);
-        // 定義 PID 列使用的特殊邊框（在右側添加一條線，並提供內邊距）。
-        private final Border pidBorder = JBUI.Borders.compound(
-                JBUI.Borders.customLine(JBColor.border(), 0, 0, 0, 1),
-                JBUI.Borders.empty(4, 6));
+
+        // 增加內邊距
+        private final Border normalBorder = JBUI.Borders.empty(8, 12);
+
+        // 低調的強調色
+        private final Color pidColor = new JBColor(
+                new Color(55, 65, 81), // Gray 700
+                new Color(229, 231, 235) // Gray 200
+        );
+        private final Color portColor = new JBColor(
+                new Color(75, 85, 99), // Gray 600
+                new Color(209, 213, 219) // Gray 300
+        );
+        private final Color subtleBg = new JBColor(
+                new Color(249, 250, 251), // Gray 50
+                new Color(50, 50, 55) // Zinc 800
+        );
 
         @Override
         public Component getTableCellRendererComponent(JTable t, Object v, boolean isSel, boolean hasFoc, int r,
                 int c) {
-            // 調用父類實現獲取用於渲染的基礎組件（通常是 JLabel）。
             Component comp = super.getTableCellRendererComponent(t, v, isSel, hasFoc, r, c);
-            if (comp instanceof JLabel) { // 確保組件是 JLabel。
-                JLabel l = (JLabel) comp;
-                l.setText(v != null ? v.toString() : ""); // 設置單元格顯示的文本。
-                l.setBorder(normalBorder); // 預設應用普通邊框。
 
-                // 根據是否選中來設置背景色和前景色。
-                if (!isSel) { // 如果未選中。
-                    // 應用斑馬紋背景色（奇偶行不同）。
-                    l.setBackground(r % 2 != 0 ? JBColor.background().brighter() : JBColor.background());
-                    // 使用標準表格前景色。
+            if (comp instanceof JLabel) {
+                JLabel l = (JLabel) comp;
+                l.setText(v != null ? v.toString() : "");
+                l.setBorder(normalBorder);
+                l.setHorizontalAlignment(LEFT);
+
+                if (!isSel) {
+                    // 柔和的交替行背景
+                    Color evenBg = UIUtil.getTableBackground();
+                    l.setBackground(r % 2 == 0 ? evenBg : subtleBg);
                     l.setForeground(UIUtil.getTableForeground());
-                } else { // 如果已選中。
-                    // 使用表格的選中背景色和前景色。
+                } else {
                     l.setBackground(t.getSelectionBackground());
                     l.setForeground(t.getSelectionForeground());
                 }
 
-                // 對第一列（PID 列）進行特殊樣式處理。
+                // PID 列 - 粗體
                 if (c == 0) {
-                    l.setHorizontalAlignment(LEFT); // 左對齊。
-                    l.setBorder(pidBorder); // 應用 PID 特殊邊框。
-                    l.setFont(t.getFont().deriveFont(Font.BOLD)); // 設置為粗體。
-                    // 如果未選中，為 PID 列設置一個稍微不同的背景色以突出顯示。
+                    l.setFont(JBUI.Fonts.label().asBold());
                     if (!isSel) {
-                        // 使用 JBColor 確保顏色在淺色和深色主題下都能適應。
-                        l.setBackground(new JBColor(new Color(245, 247, 250), new Color(55, 58, 62)));
+                        l.setForeground(pidColor);
                     }
-                } else { // 對於其他列。
-                    l.setHorizontalAlignment(LEFT); // 左對齊。
-                    l.setFont(t.getFont()); // 使用表格的預設字體。
+                }
+                // Port 列 - 粗體
+                else if (c == 1) {
+                    l.setFont(JBUI.Fonts.label().asBold());
+                    if (!isSel) {
+                        l.setForeground(portColor);
+                    }
+                }
+                // Command 列 - 普通字體
+                else {
+                    l.setFont(JBUI.Fonts.label());
                 }
             }
             return comp;

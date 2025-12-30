@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "com.audi.portmanager"
-version = "1.1.1"
+version = "1.1.2"
 
 repositories {
     mavenCentral()
@@ -52,16 +52,17 @@ intellijPlatform {
         """.trimIndent()
 
         ideaVersion {
-            sinceBuild = "241"  // 兼容 2024.1+，用 2025.2 SDK 開發測試
+            sinceBuild = "231"  // 兼容 2023.1+
             untilBuild = provider { null }  // No upper limit for future compatibility
         }
 
         changeNotes = """
-            <h3>Version 1.1.1</h3>
+            <h3>Version 1.1.2</h3>
             <ul>
+                <li><b>IMPROVED:</b> Modernized Favorites list with cleaner card-style design</li>
+                <li><b>IMPROVED:</b> Process table with unified subtle styling (no grid lines)</li>
                 <li><b>IMPROVED:</b> Memory management with proper Disposable implementation</li>
                 <li><b>IMPROVED:</b> Listener cleanup to prevent memory leaks</li>
-                <li><b>IMPROVED:</b> Faster development build with optimized configuration</li>
             </ul>
             
             <h3>Version 1.1.0</h3>
